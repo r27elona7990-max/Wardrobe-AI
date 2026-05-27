@@ -68,7 +68,7 @@ export default async function ClosetPage({ searchParams }: ClosetPageProps) {
   }
 
   // Load items from database
-  const items = await prisma.clothingItem.findMany({
+  const items: any[] = await prisma.clothingItem.findMany({
     where,
     orderBy: { createdAt: "desc" },
   });
@@ -184,7 +184,7 @@ export default async function ClosetPage({ searchParams }: ClosetPageProps) {
                           fill
                           sizes="(max-width: 768px) 50vw, 25vw"
                           className="object-cover group-hover:scale-105 transition-transform duration-500"
-                          
+
                         />
                       </div>
                     </div>
