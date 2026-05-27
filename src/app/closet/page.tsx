@@ -168,7 +168,7 @@ export default async function ClosetPage({ searchParams }: ClosetPageProps) {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-            {items.map((item) => (
+            {items.map((item: any) => (
               <div key={item.id} className="group cursor-pointer">
                 <div className="aspect-[3/4] rounded-nebula glass overflow-hidden relative border border-black/5 group-hover:border-nebula-primary/30 transition-all">
                   {/* Background pastel glow */}
