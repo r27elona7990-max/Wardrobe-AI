@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  /* Fun and Subtle (Light Pastel) Tokens */
+  --color-nebula-bg: #fdfafb;
+  --color-nebula-primary: #ff8fb0;
+  --color-nebula-secondary: #b5a1f8;
+  --color-nebula-tertiary: #93c5fd;
+  --color-nebula-surface: #ffffff;
+  --color-nebula-on-surface: #2d235c;
+  
+  --color-pastel-pink: #fbcfe8;
+  --color-pastel-blue: #bfdbfe;
+  --color-pastel-mint: #d1fae5;
+  --color-pastel-lavender: #e9d5ff;
+
+  --radius-nebula: 24px;
+  --radius-nebula-inner: 16px;
+
+  --font-lexend: "Lexend", sans-serif;
+}
+
+
+:root {
+  --background: #ffffff;
+  --foreground: #11072a;
+  --nebula-surface: #f8fafc;
+}
+
+.dark {
+  --background: #11072a;
+  --foreground: #ebe1ff;
+  --nebula-surface: #1e113c;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-lexend);
+  @apply antialiased transition-colors duration-300;
+}
+
+/* Glassmorphism utility */
+.glass {
+  @apply bg-white/50 backdrop-blur-2xl border border-white/70 shadow-sm shadow-nebula-primary/5;
+}
+
+.dark .glass {
+  @apply bg-black/20 backdrop-blur-xl border-white/10;
+}
