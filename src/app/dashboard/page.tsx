@@ -39,9 +39,9 @@ export default async function Dashboard() {
 
   // Calculate most common tag / color
   const tagCounts: Record<string, number> = {};
-  allItems.forEach((item) => {
+  allItems.forEach((item: any) => {
     if (item.tags) {
-      item.tags.split(",").forEach((tag) => {
+      item.tags.split(",").forEach((tag: any) => {
         const trimmed = tag.trim();
         if (trimmed) {
           tagCounts[trimmed] = (tagCounts[trimmed] || 0) + 1;
@@ -222,7 +222,7 @@ export default async function Dashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            {recentItems.map((item) => (
+            {recentItems.map((item: any) => (
               <Link href="/closet" key={item.id} className="group cursor-pointer space-y-3 block">
                 <div className="aspect-[3/4] rounded-nebula bg-black/5 overflow-hidden relative border border-black/5 group-hover:border-nebula-primary/30 transition-all">
                   <div className={`absolute inset-4 rounded-nebula-inner ${getPlaceholderClass(item.category)} filter blur-sm group-hover:scale-110 transition-transform duration-500`} />
