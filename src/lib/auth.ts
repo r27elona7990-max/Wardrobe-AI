@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -16,8 +17,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Missing email or password");
         }
 
+        const email = credentials.email.trim().toLowerCase();
+
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
+          where: { email }
         });
 
         if (!user || !user.password) {

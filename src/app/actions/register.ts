@@ -11,7 +11,7 @@ const registerSchema = z.object({
 });
 
 export async function registerUser(formData: FormData) {
-  const email = formData.get("email") as string;
+  const email = (formData.get("email") as string).trim().toLowerCase();
   const password = formData.get("password") as string;
   const name = formData.get("name") as string;
 

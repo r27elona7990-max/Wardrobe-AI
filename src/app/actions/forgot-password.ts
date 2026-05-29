@@ -9,7 +9,7 @@ const forgotPasswordSchema = z.object({
 });
 
 export async function requestPasswordReset(formData: FormData) {
-  const email = formData.get("email") as string;
+  const email = (formData.get("email") as string).trim().toLowerCase();
 
   const validatedFields = forgotPasswordSchema.safeParse({ email });
 
