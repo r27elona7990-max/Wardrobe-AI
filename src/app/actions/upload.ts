@@ -14,11 +14,15 @@ const getSafeFilename = (name: string) =>
     .replace(/^-|-$/g, "");
 
 const uploadToSupabaseStorage = async (file: File, userId: string, buffer: Buffer) => {
-  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const bucket = process.env.SUPABASE_STORAGE_BUCKET ?? "clothing-items";
 
   if (!supabaseUrl || !serviceRoleKey) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("Storage is not configured. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Vercel.");
+    }
+
     return null;
   }
 
@@ -41,7 +45,8 @@ const uploadToSupabaseStorage = async (file: File, userId: string, buffer: Buffe
 
   if (!response.ok) {
     const message = await response.text();
-    throw new Error(`Supabase Storage upload failed: ${message}`);
+    console.error("Supabase Storage upload failed:", message);
+    throw new Error(`Storage upload failed. Check that the "${bucket}" bucket exists and your Supabase service role key is set.`);
   }
 
   return `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/${bucket}/${objectPath}`;
@@ -74,6 +79,14 @@ export async function uploadClothingItem(formData: FormData) {
     return { error: "Missing required fields." };
   }
 
+  if (!file.type.startsWith("image/")) {
+    return { error: "Please upload an image file." };
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    return { error: "Image must be smaller than 5MB." };
+  }
+
   try {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
@@ -100,6 +113,8 @@ export async function uploadClothingItem(formData: FormData) {
     return { success: true, item: newItem };
   } catch (error) {
     console.error("Upload error:", error);
-    return { error: "Failed to upload item." };
+    return {
+      error: error instanceof Error ? error.message : "Failed to upload item.",
+    };
   }
 }
