@@ -26,7 +26,8 @@ export default function FilterSidebar({
   activeColor = "",
   searchQuery = "",
 }: FilterSidebarProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isDesktopOpen, setIsDesktopOpen] = useState(true);
   
   // Helper to build URL preserving other query options
   const buildQueryUrl = (updates: Record<string, string | null>) => {
@@ -55,26 +56,33 @@ export default function FilterSidebar({
     <>
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
-        className="md:hidden inline-flex w-fit items-center gap-2 px-4 py-2 rounded-full bg-nebula-surface/70 border border-black/5 text-nebula-on-surface/70 font-bold text-xs uppercase tracking-widest hover:text-nebula-primary transition-colors"
+        onClick={() => {
+          setIsMobileOpen(true);
+          setIsDesktopOpen((isOpen) => !isOpen);
+        }}
+        className="inline-flex w-fit items-center gap-2 px-4 py-2 rounded-full bg-nebula-surface/70 border border-black/5 text-nebula-on-surface/70 font-bold text-xs uppercase tracking-widest hover:text-nebula-primary transition-colors"
         aria-label="Open closet filters"
       >
         <Filter size={16} />
         Filters
       </button>
 
-      {isOpen && (
+      {isMobileOpen && (
         <button
           type="button"
           className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] md:hidden"
-          onClick={() => setIsOpen(false)}
+          onClick={() => setIsMobileOpen(false)}
           aria-label="Close closet filters overlay"
         />
       )}
 
     <aside
-      className={`fixed left-0 top-0 z-50 m-4 h-[calc(100vh-2rem)] w-72 max-w-[calc(100vw-2rem)] space-y-8 overflow-y-auto rounded-nebula glass p-6 transition-transform duration-300 ease-out md:sticky md:top-24 md:z-auto md:m-0 md:h-fit md:w-64 md:max-w-none md:translate-x-0 md:overflow-visible md:rounded-none md:border-r md:border-black/5 md:bg-transparent md:p-0 md:pr-6 md:shadow-none md:backdrop-blur-0 ${
-        isOpen ? "translate-x-0" : "-translate-x-[calc(100%+2rem)]"
+      className={`fixed left-0 top-0 z-50 m-4 h-[calc(100vh-2rem)] w-72 max-w-[calc(100vw-2rem)] space-y-8 overflow-y-auto rounded-nebula glass p-6 transition-transform duration-300 ease-out ${
+        isMobileOpen ? "translate-x-0" : "-translate-x-[calc(100%+2rem)]"
+      } ${
+        isDesktopOpen
+          ? "md:sticky md:top-24 md:z-auto md:m-0 md:h-fit md:w-64 md:max-w-none md:translate-x-0 md:overflow-visible md:rounded-none md:border-r md:border-black/5 md:bg-transparent md:p-0 md:pr-6 md:shadow-none md:backdrop-blur-0"
+          : "md:hidden"
       }`}
     >
       <div className="flex items-center justify-between mb-2">
@@ -86,7 +94,7 @@ export default function FilterSidebar({
           {hasActiveFilters && (
           <Link 
             href="/closet" 
-            onClick={() => setIsOpen(false)}
+            onClick={() => setIsMobileOpen(false)}
             className="text-[10px] font-bold text-red-500 hover:underline flex items-center gap-1 uppercase tracking-widest"
           >
             <X size={10} /> Clear
@@ -94,8 +102,11 @@ export default function FilterSidebar({
           )}
           <button
             type="button"
-            onClick={() => setIsOpen(false)}
-            className="md:hidden p-2 -mr-2 rounded-full hover:bg-black/5 text-nebula-on-surface/60 transition-colors"
+            onClick={() => {
+              setIsMobileOpen(false);
+              setIsDesktopOpen(false);
+            }}
+            className="p-2 -mr-2 rounded-full hover:bg-black/5 text-nebula-on-surface/60 transition-colors"
             aria-label="Close closet filters"
           >
             <X size={18} />
@@ -114,7 +125,7 @@ export default function FilterSidebar({
                 <Link 
                   key={cat} 
                   href={buildQueryUrl({ category: isActive ? null : cat })}
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => setIsMobileOpen(false)}
                   className={`w-full flex justify-between items-center group/btn py-2 px-3 rounded-nebula-inner transition-all text-sm ${
                     isActive 
                       ? "bg-nebula-primary/10 text-nebula-primary font-bold" 
@@ -139,7 +150,7 @@ export default function FilterSidebar({
                 <Link 
                   key={season} 
                   href={buildQueryUrl({ season: isActive ? null : season })}
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => setIsMobileOpen(false)}
                   className={`px-3 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-widest transition-all ${
                     isActive 
                       ? "bg-nebula-primary border-nebula-primary text-nebula-bg" 
@@ -163,7 +174,7 @@ export default function FilterSidebar({
                 <Link 
                   key={color.name} 
                   href={buildQueryUrl({ color: isActive ? null : color.name })}
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => setIsMobileOpen(false)}
                   className={`flex items-center gap-2 p-2 rounded-nebula-inner border transition-all ${
                     isActive 
                       ? "bg-nebula-secondary/15 border-nebula-secondary/40 font-bold" 

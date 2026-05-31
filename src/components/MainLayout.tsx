@@ -7,7 +7,8 @@ import TopBar from "@/components/TopBar";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
   
   // Identify if we are on an auth page
   const isAuthPage = ["/login", "/register", "/forgot-password", "/reset-password"].some(
@@ -21,19 +22,32 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="flex min-h-screen bg-nebula-bg text-nebula-on-surface">
       {/* Sidebar Padding for Fixed Sidebar */}
-      <div className="w-80 hidden md:block" />
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-      {isSidebarOpen && (
+      <div className={`hidden md:block transition-[width] duration-300 ${isDesktopSidebarOpen ? "w-80" : "w-0"}`} />
+      <Sidebar
+        isMobileOpen={isMobileSidebarOpen}
+        isDesktopOpen={isDesktopSidebarOpen}
+        onClose={() => {
+          setIsMobileSidebarOpen(false);
+          setIsDesktopSidebarOpen(false);
+        }}
+        onNavigate={() => setIsMobileSidebarOpen(false)}
+      />
+      {isMobileSidebarOpen && (
         <button
           type="button"
           className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] md:hidden"
-          onClick={() => setIsSidebarOpen(false)}
+          onClick={() => setIsMobileSidebarOpen(false)}
           aria-label="Close sidebar overlay"
         />
       )}
       
       <main className="flex-1 flex flex-col min-w-0">
-        <TopBar onMenuClick={() => setIsSidebarOpen(true)} />
+        <TopBar
+          onMenuClick={() => {
+            setIsMobileSidebarOpen(true);
+            setIsDesktopSidebarOpen((isOpen) => !isOpen);
+          }}
+        />
         <div className="p-4 md:p-8">
           {children}
         </div>

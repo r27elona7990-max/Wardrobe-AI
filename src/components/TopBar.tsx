@@ -12,7 +12,7 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
       <button
         type="button"
         onClick={onMenuClick}
-        className="md:hidden shrink-0 p-2 rounded-full hover:bg-black/5 text-nebula-on-surface/60 transition-colors"
+        className="shrink-0 p-2 rounded-full hover:bg-black/5 text-nebula-on-surface/60 transition-colors"
         aria-label="Open sidebar"
       >
         <Menu size={22} />
