@@ -11,7 +11,8 @@ import {
   Sparkles, 
   CheckCircle2, 
   Loader2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ChevronDown
 } from "lucide-react";
 import { clothingCategories } from "@/lib/clothingCategories";
 
@@ -30,6 +31,7 @@ export default function UploadPage() {
   const [pieceName, setPieceName] = useState("");
   const [category, setCategory] = useState("Tops");
   const [topStyle, setTopStyle] = useState("");
+  const [isTopStyleOpen, setIsTopStyleOpen] = useState(false);
   const [tags, setTags] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDone, setIsDone] = useState(false);
@@ -267,6 +269,7 @@ export default function UploadPage() {
                           setCategory(option);
                           if (option !== "Tops") {
                             setTopStyle("");
+                            setIsTopStyleOpen(false);
                           }
                         }}
                         className={`min-h-11 rounded-nebula-inner border px-3 text-sm font-bold transition-all disabled:opacity-50 ${
@@ -284,22 +287,43 @@ export default function UploadPage() {
                 {category === "Tops" && (
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-nebula-on-surface/30 ml-1">Top Style</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {topStyleOptions.map((option) => (
-                        <button
-                          key={option}
-                          type="button"
-                          disabled={isProcessing || isDone}
-                          onClick={() => setTopStyle(option)}
-                          className={`min-h-11 rounded-nebula-inner border px-3 text-xs font-bold transition-all disabled:opacity-50 ${
-                            topStyle === option
-                              ? "bg-nebula-primary text-nebula-bg border-nebula-primary shadow-lg shadow-nebula-primary/15"
-                              : "bg-black/5 text-nebula-on-surface/60 border-black/5 hover:border-nebula-primary/40 hover:text-nebula-primary"
-                          }`}
-                        >
-                          {option}
-                        </button>
-                      ))}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        disabled={isProcessing || isDone}
+                        onClick={() => setIsTopStyleOpen((isOpen) => !isOpen)}
+                        className="w-full min-h-12 rounded-nebula-inner border border-black/5 bg-black/5 px-4 text-left text-sm font-bold text-nebula-on-surface/70 flex items-center justify-between gap-3 hover:border-nebula-primary/40 hover:text-nebula-primary disabled:opacity-50 transition-all"
+                        aria-expanded={isTopStyleOpen}
+                      >
+                        <span>{topStyle || "Choose a top style"}</span>
+                        <ChevronDown
+                          size={18}
+                          className={`shrink-0 transition-transform ${isTopStyleOpen ? "rotate-180" : ""}`}
+                        />
+                      </button>
+
+                      {isTopStyleOpen && (
+                        <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 rounded-nebula-inner border border-black/5 bg-nebula-surface shadow-2xl shadow-black/20 p-2 space-y-1">
+                          {topStyleOptions.map((option) => (
+                            <button
+                              key={option}
+                              type="button"
+                              disabled={isProcessing || isDone}
+                              onClick={() => {
+                                setTopStyle(option);
+                                setIsTopStyleOpen(false);
+                              }}
+                              className={`w-full rounded-nebula-inner px-3 py-3 text-left text-xs font-bold transition-all disabled:opacity-50 ${
+                                topStyle === option
+                                  ? "bg-nebula-primary text-nebula-bg"
+                                  : "text-nebula-on-surface/60 hover:bg-black/5 hover:text-nebula-primary"
+                              }`}
+                            >
+                              {option}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
