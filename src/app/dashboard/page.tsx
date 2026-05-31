@@ -5,7 +5,6 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import OutfitGenerator from "@/components/OutfitGenerator";
 import PackingListGenerator from "@/components/PackingListGenerator";
 import SavedFits from "@/components/SavedFits";
 import WardrobeStatsPanel from "@/components/WardrobeStatsPanel";
@@ -224,8 +223,6 @@ export default async function Dashboard() {
           </Link>
         </div>
       </section>
-
-      <OutfitGenerator items={allItems} />
 
       <div className="grid grid-cols-1 2xl:grid-cols-2 gap-8">
         <WardrobeStatsPanel items={allItems} outfitCount={totalOutfits} />
