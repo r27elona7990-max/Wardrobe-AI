@@ -7,6 +7,40 @@ import { revalidatePath } from "next/cache";
 import { unlink } from "fs/promises";
 import { join } from "path";
 
+const deleteFromSupabaseStorage = async (imagePath: string) => {
+  const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "");
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const bucket = process.env.SUPABASE_STORAGE_BUCKET ?? "clothing-items";
+
+  if (!supabaseUrl || !serviceRoleKey || !imagePath.startsWith(supabaseUrl)) {
+    return false;
+  }
+
+  const publicPrefix = `${supabaseUrl}/storage/v1/object/public/${bucket}/`;
+  const objectPath = imagePath.startsWith(publicPrefix)
+    ? imagePath.slice(publicPrefix.length)
+    : "";
+
+  if (!objectPath) {
+    return false;
+  }
+
+  const response = await fetch(`${supabaseUrl}/storage/v1/object/${bucket}/${objectPath}`, {
+    method: "DELETE",
+    headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${serviceRoleKey}`,
+    },
+  });
+
+  if (!response.ok) {
+    const message = await response.text();
+    console.warn(`[Clothing Action] Failed to delete Supabase object ${objectPath}:`, message);
+  }
+
+  return true;
+};
+
 export async function deleteClothingItem(id: string) {
   const session = await getServerSession(authOptions);
 
@@ -35,8 +69,19 @@ export async function deleteClothingItem(id: string) {
       where: { id },
     });
 
-    // Delete file from public folder
     if (item.imagePath) {
+      const deletedCloudFile = await deleteFromSupabaseStorage(item.imagePath);
+
+      if (deletedCloudFile) {
+        revalidatePath("/closet");
+        revalidatePath("/dashboard");
+        revalidatePath("/studio");
+        revalidatePath("/profile");
+
+        return { success: true };
+      }
+
+      // Delete local development file from public folder.
       // Remove leading slash if present to join correctly with "public"
       const relativePath = item.imagePath.startsWith("/") 
         ? item.imagePath.slice(1) 
