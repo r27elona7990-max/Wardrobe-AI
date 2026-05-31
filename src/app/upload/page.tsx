@@ -31,7 +31,7 @@ export default function UploadPage() {
   const [pieceName, setPieceName] = useState("");
   const [category, setCategory] = useState("Tops");
   const [topStyle, setTopStyle] = useState("");
-  const [isTopStyleOpen, setIsTopStyleOpen] = useState(false);
+  const [isTopsMenuOpen, setIsTopsMenuOpen] = useState(false);
   const [tags, setTags] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDone, setIsDone] = useState(false);
@@ -260,73 +260,67 @@ export default function UploadPage() {
                     value={category}
                   />
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {clothingCategories.map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        disabled={isProcessing || isDone}
-                        onClick={() => {
-                          setCategory(option);
-                          if (option !== "Tops") {
-                            setTopStyle("");
-                            setIsTopStyleOpen(false);
-                          }
-                        }}
-                        className={`min-h-11 rounded-nebula-inner border px-3 text-sm font-bold transition-all disabled:opacity-50 ${
-                          category === option
-                            ? "bg-nebula-secondary text-nebula-bg border-nebula-secondary shadow-lg shadow-nebula-secondary/15"
-                            : "bg-black/5 text-nebula-on-surface/60 border-black/5 hover:border-nebula-secondary/40 hover:text-nebula-secondary"
-                        }`}
-                      >
-                        {option}
-                      </button>
-                    ))}
+                    {clothingCategories.map((option) => {
+                      const isTops = option === "Tops";
+                      const isActive = category === option;
+
+                      return (
+                        <div key={option} className="relative">
+                          <button
+                            type="button"
+                            disabled={isProcessing || isDone}
+                            onClick={() => {
+                              setCategory(option);
+                              if (isTops) {
+                                setIsTopsMenuOpen((isOpen) => !isOpen);
+                              } else {
+                                setTopStyle("");
+                                setIsTopsMenuOpen(false);
+                              }
+                            }}
+                            className={`min-h-11 w-full rounded-nebula-inner border px-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${
+                              isActive
+                                ? "bg-nebula-secondary text-nebula-bg border-nebula-secondary shadow-lg shadow-nebula-secondary/15"
+                                : "bg-black/5 text-nebula-on-surface/60 border-black/5 hover:border-nebula-secondary/40 hover:text-nebula-secondary"
+                            }`}
+                          >
+                            <span>{isTops && topStyle ? topStyle : option}</span>
+                            {isTops && (
+                              <ChevronDown
+                                size={16}
+                                className={`shrink-0 transition-transform ${isTopsMenuOpen ? "rotate-180" : ""}`}
+                              />
+                            )}
+                          </button>
+
+                          {isTops && isTopsMenuOpen && (
+                            <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 rounded-nebula-inner border border-black/5 bg-nebula-surface shadow-2xl shadow-black/20 p-2 space-y-1">
+                              {topStyleOptions.map((styleOption) => (
+                                <button
+                                  key={styleOption}
+                                  type="button"
+                                  disabled={isProcessing || isDone}
+                                  onClick={() => {
+                                    setCategory("Tops");
+                                    setTopStyle(styleOption);
+                                    setIsTopsMenuOpen(false);
+                                  }}
+                                  className={`w-full rounded-nebula-inner px-3 py-3 text-left text-xs font-bold transition-all disabled:opacity-50 ${
+                                    topStyle === styleOption
+                                      ? "bg-nebula-primary text-nebula-bg"
+                                      : "text-nebula-on-surface/60 hover:bg-black/5 hover:text-nebula-primary"
+                                  }`}
+                                >
+                                  {styleOption}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-
-                {category === "Tops" && (
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-nebula-on-surface/30 ml-1">Top Style</label>
-                    <div className="relative">
-                      <button
-                        type="button"
-                        disabled={isProcessing || isDone}
-                        onClick={() => setIsTopStyleOpen((isOpen) => !isOpen)}
-                        className="w-full min-h-12 rounded-nebula-inner border border-black/5 bg-black/5 px-4 text-left text-sm font-bold text-nebula-on-surface/70 flex items-center justify-between gap-3 hover:border-nebula-primary/40 hover:text-nebula-primary disabled:opacity-50 transition-all"
-                        aria-expanded={isTopStyleOpen}
-                      >
-                        <span>{topStyle || "Choose a top style"}</span>
-                        <ChevronDown
-                          size={18}
-                          className={`shrink-0 transition-transform ${isTopStyleOpen ? "rotate-180" : ""}`}
-                        />
-                      </button>
-
-                      {isTopStyleOpen && (
-                        <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 rounded-nebula-inner border border-black/5 bg-nebula-surface shadow-2xl shadow-black/20 p-2 space-y-1">
-                          {topStyleOptions.map((option) => (
-                            <button
-                              key={option}
-                              type="button"
-                              disabled={isProcessing || isDone}
-                              onClick={() => {
-                                setTopStyle(option);
-                                setIsTopStyleOpen(false);
-                              }}
-                              className={`w-full rounded-nebula-inner px-3 py-3 text-left text-xs font-bold transition-all disabled:opacity-50 ${
-                                topStyle === option
-                                  ? "bg-nebula-primary text-nebula-bg"
-                                  : "text-nebula-on-surface/60 hover:bg-black/5 hover:text-nebula-primary"
-                              }`}
-                            >
-                              {option}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-nebula-on-surface/30 ml-1">Vibe / Tags</label>
