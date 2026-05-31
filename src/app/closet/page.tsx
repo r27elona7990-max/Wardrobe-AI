@@ -99,7 +99,7 @@ export default async function ClosetPage({ searchParams }: ClosetPageProps) {
   };
 
   return (
-    <div className="flex gap-10">
+    <div className="flex flex-col gap-6 md:flex-row md:gap-10">
       {/* Sidebar Filter Component */}
       <FilterSidebar 
         activeCategory={category}
@@ -109,7 +109,7 @@ export default async function ClosetPage({ searchParams }: ClosetPageProps) {
       />
 
       {/* Main Content */}
-      <div className="flex-1 space-y-8">
+      <div className="flex-1 space-y-8 min-w-0">
         {/* Header and Controls */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
