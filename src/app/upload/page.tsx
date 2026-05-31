@@ -15,11 +15,21 @@ import {
 } from "lucide-react";
 import { clothingCategories } from "@/lib/clothingCategories";
 
+const topStyleOptions = [
+  "Tank Tops",
+  "Baby Tees & Fitted Tops",
+  "Y2K & Crop Tops",
+  "Oversized & Streetwear Tops",
+  "Cute Feminine Tops",
+  "Corset & Going-Out Tops",
+];
+
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [pieceName, setPieceName] = useState("");
   const [category, setCategory] = useState("Tops");
+  const [topStyle, setTopStyle] = useState("");
   const [tags, setTags] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDone, setIsDone] = useState(false);
@@ -41,10 +51,11 @@ export default function UploadPage() {
   });
 
   const suggestedTags = useMemo(() => {
-    const sourceText = `${pieceName} ${category} ${file?.name ?? ""}`.toLowerCase();
+    const sourceText = `${pieceName} ${category} ${topStyle} ${file?.name ?? ""}`.toLowerCase();
     const suggestions = new Set<string>();
 
     suggestions.add(category);
+    if (category === "Tops" && topStyle) suggestions.add(topStyle);
 
     const rules: Array<[string[], string[]]> = [
       [["white", "cream", "ivory"], ["White", "Minimal"]],
@@ -69,6 +80,11 @@ export default function UploadPage() {
       [["vintage", "retro"], ["Vintage"]],
       [["y2k"], ["Y2K"]],
       [["formal", "office", "work"], ["Formal", "Workwear"]],
+      [["tank"], ["Tank Tops"]],
+      [["baby tee", "fitted"], ["Baby Tees & Fitted Tops"]],
+      [["crop"], ["Y2K & Crop Tops"]],
+      [["oversized"], ["Oversized & Streetwear Tops"]],
+      [["corset"], ["Corset & Going-Out Tops"]],
     ];
 
     rules.forEach(([keywords, tagsToAdd]) => {
@@ -82,7 +98,7 @@ export default function UploadPage() {
     if (category === "Accessories") suggestions.add("Accent Piece");
 
     return Array.from(suggestions).slice(0, 10);
-  }, [category, file?.name, pieceName]);
+  }, [category, file?.name, pieceName, topStyle]);
 
   const addSuggestedTag = (tag: string) => {
     const currentTags = tags
@@ -97,6 +113,19 @@ export default function UploadPage() {
     setTags([...currentTags, tag].join(", "));
   };
 
+  const getTagsWithTopStyle = () => {
+    const currentTags = tags
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    if (category === "Tops" && topStyle && !currentTags.some((item) => item.toLowerCase() === topStyle.toLowerCase())) {
+      currentTags.push(topStyle);
+    }
+
+    return currentTags.join(", ");
+  };
+
   async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!file) return;
@@ -105,6 +134,7 @@ export default function UploadPage() {
     
     const formData = new FormData(event.currentTarget);
     formData.append("file", file);
+    formData.set("tags", getTagsWithTopStyle());
 
     // Simulate "AI Background Removal" delay
     await new Promise(r => setTimeout(r, 2000));
@@ -233,7 +263,12 @@ export default function UploadPage() {
                         key={option}
                         type="button"
                         disabled={isProcessing || isDone}
-                        onClick={() => setCategory(option)}
+                        onClick={() => {
+                          setCategory(option);
+                          if (option !== "Tops") {
+                            setTopStyle("");
+                          }
+                        }}
                         className={`min-h-11 rounded-nebula-inner border px-3 text-sm font-bold transition-all disabled:opacity-50 ${
                           category === option
                             ? "bg-nebula-secondary text-nebula-bg border-nebula-secondary shadow-lg shadow-nebula-secondary/15"
@@ -245,6 +280,29 @@ export default function UploadPage() {
                     ))}
                   </div>
                 </div>
+
+                {category === "Tops" && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-nebula-on-surface/30 ml-1">Top Style</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {topStyleOptions.map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          disabled={isProcessing || isDone}
+                          onClick={() => setTopStyle(option)}
+                          className={`min-h-11 rounded-nebula-inner border px-3 text-xs font-bold transition-all disabled:opacity-50 ${
+                            topStyle === option
+                              ? "bg-nebula-primary text-nebula-bg border-nebula-primary shadow-lg shadow-nebula-primary/15"
+                              : "bg-black/5 text-nebula-on-surface/60 border-black/5 hover:border-nebula-primary/40 hover:text-nebula-primary"
+                          }`}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-nebula-on-surface/30 ml-1">Vibe / Tags</label>
