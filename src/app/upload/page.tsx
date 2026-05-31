@@ -29,7 +29,7 @@ const categoryStyleOptions: Partial<Record<string, string[]>> = {
   Tops: topStyleOptions,
   Shirts: ["Formal Shirts", "Casual Shirts", "Oversized Shirts", "Printed Shirts"],
   "T-Shirts": ["Basic Tees", "Graphic Tees", "Oversized Tees", "Fitted Tees"],
-  Bottoms: ["Jeans", "Trousers", "Shorts", "Cargo Pants", "Leggings"],
+  Bottoms: ["Bottoms", "Trousers", "Shorts", "Cargo Pants", "Leggings"],
   Dresses: ["Casual Dresses", "Party Dresses", "Bodycon Dresses", "Maxi Dresses"],
   Skirts: ["Mini Skirts", "Midi Skirts", "Denim Skirts", "Pleated Skirts"],
   Shoes: ["Sneakers", "Flats", "Loafers", "Sandals"],
