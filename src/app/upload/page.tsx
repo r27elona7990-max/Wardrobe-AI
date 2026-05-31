@@ -96,27 +96,29 @@ export default function UploadPage() {
       [["pink", "rose"], ["Soft Pink", "Cute"]],
       [["purple", "lavender", "violet"], ["Lavender", "Soft"]],
       [["green", "mint", "sage"], ["Mint", "Fresh"]],
-      [["red", "maroon", "burgundy"], ["Statement"]],
-      [["yellow", "gold"], ["Bright"]],
-      [["brown", "tan", "beige"], ["Neutral"]],
+      [["red", "maroon", "burgundy"], ["Statement", "Going-Out"]],
+      [["yellow", "gold"], ["Bright", "Warm Tone"]],
+      [["brown", "tan", "beige"], ["Neutral", "Clean Girl"]],
+      [["grey", "gray", "silver"], ["Cool Tone", "Minimal"]],
       [["tee", "tshirt", "t-shirt", "hoodie", "sweatshirt"], ["Streetwear", "Casual"]],
-      [["shirt", "blouse"], ["Smart Casual"]],
+      [["shirt", "blouse"], ["Smart Casual", "Clean Girl"]],
       [["jean", "denim"], ["Denim", "Everyday"]],
-      [["dress", "skirt"], ["Dressy"]],
-      [["jacket", "coat", "blazer"], ["Layering", "Winter"]],
+      [["dress", "skirt"], ["Dressy", "Soft Feminine"]],
+      [["jacket", "coat", "blazer"], ["Layering", "Winter", "Office Siren"]],
       [["sneaker", "shoe", "boot"], ["Footwear", "Streetwear"]],
       [["summer", "linen", "shorts"], ["Summer"]],
       [["winter", "wool", "knit"], ["Winter"]],
-      [["party", "sequin", "silk"], ["Party"]],
-      [["gym", "sport", "active"], ["Activewear"]],
+      [["party", "sequin", "silk"], ["Party", "Statement"]],
+      [["gym", "sport", "active"], ["Activewear", "Athleisure"]],
       [["vintage", "retro"], ["Vintage"]],
-      [["y2k"], ["Y2K"]],
-      [["formal", "office", "work"], ["Formal", "Workwear"]],
-      [["tank"], ["Tank Tops"]],
-      [["baby tee", "fitted"], ["Baby Tees & Fitted Tops"]],
-      [["crop"], ["Y2K & Crop Tops"]],
-      [["oversized"], ["Oversized & Streetwear Tops"]],
-      [["corset"], ["Corset & Going-Out Tops"]],
+      [["y2k", "mini", "platform"], ["Y2K"]],
+      [["formal", "office", "work"], ["Formal", "Workwear", "Office Siren"]],
+      [["tank"], ["Tank Tops", "Hot Weather"]],
+      [["baby tee", "fitted"], ["Baby Tees & Fitted Tops", "Y2K"]],
+      [["crop"], ["Y2K & Crop Tops", "Going-Out"]],
+      [["oversized"], ["Oversized & Streetwear Tops", "Streetwear"]],
+      [["corset"], ["Corset & Going-Out Tops", "Date Night"]],
+      [["bag", "belt", "jewelry", "hat"], ["Accessory", "Finishing Piece"]],
     ];
 
     rules.forEach(([keywords, tagsToAdd]) => {
@@ -128,6 +130,8 @@ export default function UploadPage() {
     if (["Formal", "Sports", "Casual"].includes(category)) suggestions.add(category);
     if (["Shoes", "Heels", "Boots"].includes(category)) suggestions.add("Footwear");
     if (category === "Accessories") suggestions.add("Accent Piece");
+    if (categoryStyle.includes("Fitted") || categoryStyle.includes("Corset")) suggestions.add("Bodycon Balance");
+    if (categoryStyle.includes("Oversized") || categoryStyle.includes("Cargo")) suggestions.add("Volume Balance");
 
     return Array.from(suggestions).slice(0, 10);
   }, [category, categoryStyle, file?.name]);

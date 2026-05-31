@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { saveOutfit } from "@/app/actions/outfit";
 import { clothingCategories, isBottomCategory, isShoesCategory, isTopCategory } from "@/lib/clothingCategories";
+import { buildStylistExplanation, scoreItemForStyle, scoreOutfitDraft, styleGuidelines } from "@/lib/styleKnowledge";
 
 interface DbClothingItem {
   id: string;
@@ -32,27 +33,15 @@ interface OutfitStudioClientProps {
   initialItems: DbClothingItem[];
 }
 
+interface SuggestedDraft {
+  top: DbClothingItem;
+  bottom: DbClothingItem;
+  shoes: DbClothingItem;
+  accessories?: DbClothingItem;
+}
+
 const occasions = ["Casual", "College", "Work", "Date", "Party", "Travel"];
 const weatherOptions = ["Hot", "Mild", "Cold", "Rainy"];
-
-const occasionKeywords: Record<string, string[]> = {
-  Casual: ["casual", "streetwear", "everyday", "denim", "tee", "hoodie"],
-  College: ["casual", "comfortable", "streetwear", "sneaker", "denim", "backpack"],
-  Work: ["formal", "workwear", "office", "smart", "shirt", "blazer"],
-  Date: ["dressy", "cute", "soft", "statement", "classic", "minimal"],
-  Party: ["party", "statement", "bright", "silk", "dressy", "y2k"],
-  Travel: ["comfortable", "casual", "layering", "sneaker", "neutral", "everyday"],
-};
-
-const weatherKeywords: Record<string, string[]> = {
-  Hot: ["summer", "linen", "shorts", "tee", "light", "fresh"],
-  Mild: ["spring", "fall", "casual", "everyday", "layering"],
-  Cold: ["winter", "wool", "knit", "hoodie", "jacket", "coat", "layering"],
-  Rainy: ["outerwear", "jacket", "boot", "layering", "waterproof", "dark"],
-};
-
-const getItemText = (item: DbClothingItem) =>
-  `${item.name} ${item.category} ${item.tags ?? ""}`.toLowerCase();
 
 export default function OutfitStudioClient({ initialItems }: OutfitStudioClientProps) {
   const router = useRouter();
@@ -96,37 +85,67 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
     }
   };
 
-  const scoreItem = (item: DbClothingItem) => {
-    const text = getItemText(item);
-    const keywords = [...occasionKeywords[occasion], ...weatherKeywords[weather]];
+  const styleContext = { occasion, weather };
 
-    return keywords.reduce((score, keyword) => {
-      return text.includes(keyword) ? score + 2 : score;
-    }, Math.random());
-  };
-
-  const pickBestItem = (categoryMatch: (item: DbClothingItem) => boolean) => {
+  const getBestCandidates = (
+    categoryMatch: (item: DbClothingItem) => boolean,
+    limit = 8
+  ) => {
     return initialItems
       .filter(categoryMatch)
-      .sort((a, b) => scoreItem(b) - scoreItem(a))[0];
+      .sort((a, b) => scoreItemForStyle(b, styleContext) - scoreItemForStyle(a, styleContext))
+      .slice(0, limit);
+  };
+
+  const buildBestDraft = (): SuggestedDraft | null => {
+    const topOptions = getBestCandidates((item) => isTopCategory(item.category));
+    const bottomOptions = getBestCandidates((item) => isBottomCategory(item.category));
+    const shoeOptions = getBestCandidates((item) => isShoesCategory(item.category));
+    const accessoryOptions = [
+      undefined,
+      ...getBestCandidates((item) => item.category === "Accessories", 5),
+    ];
+
+    let bestDraft: SuggestedDraft | null = null;
+    let bestScore = Number.NEGATIVE_INFINITY;
+
+    for (const topOption of topOptions) {
+      for (const bottomOption of bottomOptions) {
+        for (const shoeOption of shoeOptions) {
+          for (const accessoryOption of accessoryOptions) {
+            const draft: SuggestedDraft = {
+              top: topOption,
+              bottom: bottomOption,
+              shoes: shoeOption,
+              accessories: accessoryOption,
+            };
+            const { score } = scoreOutfitDraft(draft, styleContext);
+
+            if (score > bestScore) {
+              bestDraft = draft;
+              bestScore = score;
+            }
+          }
+        }
+      }
+    }
+
+    return bestDraft;
   };
 
   const handleAutoStyle = () => {
-    const suggestedTop = pickBestItem((item) => isTopCategory(item.category));
-    const suggestedBottom = pickBestItem((item) => isBottomCategory(item.category));
-    const suggestedShoes = pickBestItem((item) => isShoesCategory(item.category));
-    const suggestedAccessories = pickBestItem((item) => item.category === "Accessories");
+    const suggestedDraft = buildBestDraft();
 
-    if (!suggestedTop || !suggestedBottom || !suggestedShoes) {
+    if (!suggestedDraft) {
       setStylistMessage("Upload at least one top or style piece, one bottom or skirt, and one pair of shoes so I can build a complete fit.");
       return;
     }
 
-    setTop(suggestedTop);
-    setBottom(suggestedBottom);
-    setShoes(suggestedShoes);
-    setAccessories(suggestedAccessories ?? null);
-    setStylistMessage(`Drafted a ${weather.toLowerCase()} ${occasion.toLowerCase()} fit on the canvas. Swap anything you want before saving.`);
+    setTop(suggestedDraft.top);
+    setBottom(suggestedDraft.bottom);
+    setShoes(suggestedDraft.shoes);
+    setAccessories(suggestedDraft.accessories ?? null);
+    setStylistMessage(buildStylistExplanation(suggestedDraft, styleContext));
   };
 
   const handleOpenSaveModal = () => {
@@ -498,9 +517,9 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
           <div className="space-y-4">
              <h4 className="text-[10px] font-black uppercase tracking-widest text-nebula-on-surface/40 px-1">Style Guidelines</h4>
              <div className="space-y-3 text-xs text-nebula-on-surface/50 font-medium leading-relaxed">
-               <p>✨ Try balancing voluminous bottoms with form-fitting crop tops.</p>
-               <p>👟 Clean shoes act as anchor points for pastel color combinations.</p>
-               <p>🧢 Finish off outfits with matching accessories to complete the aesthetic identity.</p>
+               {styleGuidelines.map((guideline) => (
+                 <p key={guideline}>{guideline}</p>
+               ))}
              </div>
           </div>
         </div>
