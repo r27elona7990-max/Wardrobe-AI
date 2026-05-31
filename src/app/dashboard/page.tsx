@@ -6,6 +6,9 @@ import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import OutfitGenerator from "@/components/OutfitGenerator";
+import PackingListGenerator from "@/components/PackingListGenerator";
+import SavedFits from "@/components/SavedFits";
+import WardrobeStatsPanel from "@/components/WardrobeStatsPanel";
 
 export default async function Dashboard() {
   const session = await getServerSession(authOptions);
@@ -37,6 +40,19 @@ export default async function Dashboard() {
     where: { userId },
     select: { id: true, name: true, category: true, tags: true },
   });
+
+  const savedOutfits = await prisma.outfit.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: 6,
+  });
+
+  const savedOutfitCards = savedOutfits.map((outfit) => ({
+    id: outfit.id,
+    name: outfit.name,
+    itemIds: outfit.itemIds,
+    createdAt: outfit.createdAt.toISOString(),
+  }));
 
   // Calculate most common tag / color
   const tagCounts: Record<string, number> = {};
@@ -209,6 +225,13 @@ export default async function Dashboard() {
       </section>
 
       <OutfitGenerator items={allItems} />
+
+      <div className="grid grid-cols-1 2xl:grid-cols-2 gap-8">
+        <WardrobeStatsPanel items={allItems} outfitCount={totalOutfits} />
+        <PackingListGenerator items={allItems} />
+      </div>
+
+      <SavedFits outfits={savedOutfitCards} items={allItems} />
 
       {/* Recent Drops */}
       <section className="space-y-6">
