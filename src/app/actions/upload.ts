@@ -13,10 +13,13 @@ const getSafeFilename = (name: string) =>
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
 
+const cleanEnvValue = (value: string | undefined) =>
+  value?.trim().replace(/^["']|["']$/g, "");
+
 const uploadToSupabaseStorage = async (file: File, userId: string, buffer: Buffer) => {
-  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const bucket = process.env.SUPABASE_STORAGE_BUCKET ?? "clothing-items";
+  const supabaseUrl = cleanEnvValue(process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const serviceRoleKey = cleanEnvValue(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const bucket = cleanEnvValue(process.env.SUPABASE_STORAGE_BUCKET) ?? "clothing-items";
 
   if (!supabaseUrl || !serviceRoleKey) {
     if (process.env.NODE_ENV === "production") {

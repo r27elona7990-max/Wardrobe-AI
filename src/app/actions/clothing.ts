@@ -7,10 +7,13 @@ import { revalidatePath } from "next/cache";
 import { unlink } from "fs/promises";
 import { join } from "path";
 
+const cleanEnvValue = (value: string | undefined) =>
+  value?.trim().replace(/^["']|["']$/g, "");
+
 const deleteFromSupabaseStorage = async (imagePath: string) => {
-  const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "");
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const bucket = process.env.SUPABASE_STORAGE_BUCKET ?? "clothing-items";
+  const supabaseUrl = cleanEnvValue(process.env.SUPABASE_URL)?.replace(/\/$/, "");
+  const serviceRoleKey = cleanEnvValue(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const bucket = cleanEnvValue(process.env.SUPABASE_STORAGE_BUCKET) ?? "clothing-items";
 
   if (!supabaseUrl || !serviceRoleKey || !imagePath.startsWith(supabaseUrl)) {
     return false;
