@@ -3,7 +3,7 @@
 import { Search, Bell, Sun, Menu } from "lucide-react";
 
 type TopBarProps = {
-  onMenuClick: () => void;
+  onMenuClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
 };
 
 export default function TopBar({ onMenuClick }: TopBarProps) {

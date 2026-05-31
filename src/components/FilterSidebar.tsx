@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronRight, Filter, X } from "lucide-react";
 
 const categories = ["Tops", "Bottoms", "Outerwear", "Shoes", "Accessories"];
@@ -28,6 +28,22 @@ export default function FilterSidebar({
 }: FilterSidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isDesktopOpen, setIsDesktopOpen] = useState(true);
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!filterRef.current?.contains(event.target as Node)) {
+        setIsMobileOpen(false);
+        setIsDesktopOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, []);
   
   // Helper to build URL preserving other query options
   const buildQueryUrl = (updates: Record<string, string | null>) => {
@@ -53,7 +69,7 @@ export default function FilterSidebar({
   const hasActiveFilters = activeCategory || activeSeason || activeColor;
 
   return (
-    <>
+    <div ref={filterRef} className="contents">
       <button
         type="button"
         onClick={() => {
@@ -190,6 +206,6 @@ export default function FilterSidebar({
         </div>
       </div>
     </aside>
-    </>
+    </div>
   );
 }

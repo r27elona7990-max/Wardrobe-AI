@@ -20,18 +20,29 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <div className="flex min-h-screen bg-nebula-bg text-nebula-on-surface">
+    <div
+      className="flex min-h-screen bg-nebula-bg text-nebula-on-surface"
+      onClick={() => {
+        setIsMobileSidebarOpen(false);
+        setIsDesktopSidebarOpen(false);
+      }}
+    >
       {/* Sidebar Padding for Fixed Sidebar */}
       <div className={`hidden md:block transition-[width] duration-300 ${isDesktopSidebarOpen ? "w-80" : "w-0"}`} />
-      <Sidebar
-        isMobileOpen={isMobileSidebarOpen}
-        isDesktopOpen={isDesktopSidebarOpen}
-        onClose={() => {
-          setIsMobileSidebarOpen(false);
-          setIsDesktopSidebarOpen(false);
-        }}
-        onNavigate={() => setIsMobileSidebarOpen(false)}
-      />
+      <div onClick={(event) => event.stopPropagation()}>
+        <Sidebar
+          isMobileOpen={isMobileSidebarOpen}
+          isDesktopOpen={isDesktopSidebarOpen}
+          onClose={() => {
+            setIsMobileSidebarOpen(false);
+            setIsDesktopSidebarOpen(false);
+          }}
+          onNavigate={() => {
+            setIsMobileSidebarOpen(false);
+            setIsDesktopSidebarOpen(false);
+          }}
+        />
+      </div>
       {isMobileSidebarOpen && (
         <button
           type="button"
@@ -43,7 +54,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       
       <main className="flex-1 flex flex-col min-w-0">
         <TopBar
-          onMenuClick={() => {
+          onMenuClick={(event) => {
+            event.stopPropagation();
             setIsMobileSidebarOpen(true);
             setIsDesktopSidebarOpen((isOpen) => !isOpen);
           }}
