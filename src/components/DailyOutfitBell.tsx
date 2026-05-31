@@ -93,6 +93,16 @@ export default function DailyOutfitBell() {
     };
   }, [clearScheduledNotification, scheduleDailySuggestion]);
 
+  useEffect(() => {
+    if (!status) {
+      return;
+    }
+
+    const hideStatus = window.setTimeout(() => setStatus(null), 2000);
+
+    return () => window.clearTimeout(hideStatus);
+  }, [status]);
+
   const toggleNotifications = async () => {
     setStatus(null);
 
