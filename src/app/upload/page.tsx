@@ -44,7 +44,6 @@ const categoryStyleOptions: Partial<Record<string, string[]>> = {
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [pieceName, setPieceName] = useState("");
   const [category, setCategory] = useState("Tops");
   const [categoryStyle, setCategoryStyle] = useState("");
   const [openCategoryMenu, setOpenCategoryMenu] = useState<string | null>(null);
@@ -84,7 +83,7 @@ export default function UploadPage() {
   }, []);
 
   const suggestedTags = useMemo(() => {
-    const sourceText = `${pieceName} ${category} ${categoryStyle} ${file?.name ?? ""}`.toLowerCase();
+    const sourceText = `${category} ${categoryStyle} ${file?.name ?? ""}`.toLowerCase();
     const suggestions = new Set<string>();
 
     suggestions.add(category);
@@ -131,7 +130,7 @@ export default function UploadPage() {
     if (category === "Accessories") suggestions.add("Accent Piece");
 
     return Array.from(suggestions).slice(0, 10);
-  }, [category, categoryStyle, file?.name, pieceName]);
+  }, [category, categoryStyle, file?.name]);
 
   const addSuggestedTag = (tag: string) => {
     const currentTags = tags
@@ -167,6 +166,7 @@ export default function UploadPage() {
     
     const formData = new FormData(event.currentTarget);
     formData.append("file", file);
+    formData.set("name", categoryStyle || category);
     formData.set("tags", getTagsWithTopStyle());
 
     // Simulate "AI Background Removal" delay
@@ -269,20 +269,6 @@ export default function UploadPage() {
               )}
 
               <div className="space-y-5">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-nebula-on-surface/30 ml-1">Piece Name</label>
-                  <input 
-                    name="name"
-                    required
-                    disabled={isProcessing || isDone}
-                    type="text" 
-                    value={pieceName}
-                    onChange={(event) => setPieceName(event.target.value)}
-                    placeholder="e.g. Vintage Oversized Tee"
-                    className="w-full bg-black/5 border border-black/5 rounded-nebula-inner px-4 py-3 outline-none focus:border-nebula-primary/50 focus:bg-black/10 transition-all text-sm disabled:opacity-50"
-                  />
-                </div>
-
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-nebula-on-surface/30 ml-1">Category</label>
                   <input
