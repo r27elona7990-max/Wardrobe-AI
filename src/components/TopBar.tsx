@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, Bell, Sun, Menu, Moon } from "lucide-react";
+import { Search, Sun, Menu, Moon } from "lucide-react";
+import DailyOutfitBell from "@/components/DailyOutfitBell";
 
 type TopBarProps = {
   onMenuClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -57,9 +58,7 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
       </div>
 
       <div className="flex items-center gap-2 md:gap-4">
-        <button className="p-2 rounded-full hover:bg-black/5 text-nebula-on-surface/60 transition-colors">
-          <Bell size={20} />
-        </button>
+        <DailyOutfitBell />
         
         <div className="hidden sm:block h-4 w-[1px] bg-black/10 mx-2" />
         
