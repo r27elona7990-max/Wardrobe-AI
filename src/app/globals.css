@@ -28,9 +28,15 @@
 }
 
 .dark {
-  --background: #11072a;
-  --foreground: #ebe1ff;
-  --nebula-surface: #1e113c;
+  --background: #0f0a1f;
+  --foreground: #f4efff;
+  --nebula-surface: #1c1433;
+  --color-nebula-bg: #0f0a1f;
+  --color-nebula-surface: #1c1433;
+  --color-nebula-on-surface: #f4efff;
+  --color-nebula-primary: #ff8fb8;
+  --color-nebula-secondary: #c6b6ff;
+  --color-nebula-tertiary: #9ed0ff;
 }
 
 body {
@@ -46,5 +52,5 @@ body {
 }
 
 .dark .glass {
-  @apply bg-black/20 backdrop-blur-xl border-white/10;
+  @apply bg-white/8 backdrop-blur-xl border-white/10 shadow-black/20;
 }
