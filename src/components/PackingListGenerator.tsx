@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Luggage, Sparkles } from "lucide-react";
+import { isBottomCategory, isShoesCategory, isTopCategory } from "@/lib/clothingCategories";
 
 type ClothingItem = {
   id: string;
@@ -26,11 +27,16 @@ const weatherKeywords: Record<string, string[]> = {
   Rainy: ["rain", "jacket", "boot", "outerwear", "dark", "layering"],
 };
 
-const pickItems = (items: ClothingItem[], category: string, count: number, weather: string) => {
+const pickItems = (
+  items: ClothingItem[],
+  categoryMatch: (item: ClothingItem) => boolean,
+  count: number,
+  weather: string
+) => {
   const keywords = weatherKeywords[weather];
 
   return items
-    .filter((item) => item.category === category)
+    .filter(categoryMatch)
     .sort((a, b) => {
       const score = (item: ClothingItem) =>
         keywords.reduce((total, keyword) => total + (getText(item).includes(keyword) ? 1 : 0), 0);
@@ -45,17 +51,21 @@ export default function PackingListGenerator({ items }: PackingListGeneratorProp
   const [weather, setWeather] = useState("Mild");
 
   const packingList = useMemo(() => {
-    const tops = pickItems(items, "Tops", days, weather);
-    const bottoms = pickItems(items, "Bottoms", Math.max(1, Math.ceil(days / 2)), weather);
-    const shoes = pickItems(items, "Shoes", Math.min(2, Math.max(1, Math.ceil(days / 4))), weather);
-    const accessories = pickItems(items, "Accessories", Math.min(3, days), weather);
-    const outerwearCount = weather === "Hot" ? 0 : weather === "Mild" ? 1 : 2;
-    const outerwear = pickItems(items, "Outerwear", outerwearCount, weather);
+    const tops = pickItems(items, (item) => isTopCategory(item.category), days, weather);
+    const bottoms = pickItems(items, (item) => isBottomCategory(item.category), Math.max(1, Math.ceil(days / 2)), weather);
+    const shoes = pickItems(items, (item) => isShoesCategory(item.category), Math.min(2, Math.max(1, Math.ceil(days / 4))), weather);
+    const accessories = pickItems(items, (item) => item.category === "Accessories", Math.min(3, days), weather);
+    const outfitLayers = pickItems(
+      items,
+      (item) => ["Formal", "Sports", "Casual"].includes(item.category),
+      weather === "Hot" ? 1 : 2,
+      weather
+    );
 
     return [
-      { label: "Tops", items: tops },
-      { label: "Bottoms", items: bottoms },
-      { label: "Outerwear", items: outerwear },
+      { label: "Tops & Dresses", items: tops },
+      { label: "Bottoms & Skirts", items: bottoms },
+      { label: "Style Pieces", items: outfitLayers },
       { label: "Shoes", items: shoes },
       { label: "Accessories", items: accessories },
     ].filter((group) => group.items.length > 0);

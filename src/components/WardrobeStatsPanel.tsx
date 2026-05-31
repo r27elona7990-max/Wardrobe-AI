@@ -1,4 +1,5 @@
 import { BarChart3 } from "lucide-react";
+import { clothingCategories, isBottomCategory, isShoesCategory, isTopCategory } from "@/lib/clothingCategories";
 
 type ClothingItem = {
   id: string;
@@ -11,18 +12,17 @@ type WardrobeStatsPanelProps = {
   outfitCount: number;
 };
 
-const requiredCategories = ["Tops", "Bottoms", "Shoes"];
-const categoryLabels = ["Tops", "Bottoms", "Outerwear", "Shoes", "Accessories"];
-
 export default function WardrobeStatsPanel({ items, outfitCount }: WardrobeStatsPanelProps) {
-  const categoryCounts = categoryLabels.map((category) => ({
+  const categoryCounts = clothingCategories.map((category) => ({
     category,
     count: items.filter((item) => item.category === category).length,
   }));
 
-  const gaps = requiredCategories.filter(
-    (category) => !items.some((item) => item.category === category)
-  );
+  const gaps = [
+    { label: "a top, shirt, dress, or style piece", hasItem: items.some((item) => isTopCategory(item.category)) },
+    { label: "a bottom or skirt", hasItem: items.some((item) => isBottomCategory(item.category)) },
+    { label: "shoes", hasItem: items.some((item) => isShoesCategory(item.category)) },
+  ].filter((gap) => !gap.hasItem);
 
   const uniqueTags = new Set(
     items.flatMap((item) =>
@@ -86,7 +86,7 @@ export default function WardrobeStatsPanel({ items, outfitCount }: WardrobeStats
           <p className="text-sm font-bold text-nebula-on-surface/60">
             {gaps.length === 0
               ? "You have the basics for complete outfits."
-              : `Add ${gaps.join(", ")} to unlock better outfit suggestions.`}
+              : `Add ${gaps.map((gap) => gap.label).join(", ")} to unlock better outfit suggestions.`}
           </p>
         </div>
       </div>

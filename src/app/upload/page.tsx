@@ -13,8 +13,7 @@ import {
   Loader2,
   Image as ImageIcon
 } from "lucide-react";
-
-const categories = ["Tops", "Bottoms", "Outerwear", "Shoes", "Accessories"];
+import { clothingCategories } from "@/lib/clothingCategories";
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -78,8 +77,8 @@ export default function UploadPage() {
       }
     });
 
-    if (category === "Outerwear") suggestions.add("Layering");
-    if (category === "Shoes") suggestions.add("Footwear");
+    if (["Formal", "Sports", "Casual"].includes(category)) suggestions.add(category);
+    if (["Shoes", "Heels", "Boots"].includes(category)) suggestions.add("Footwear");
     if (category === "Accessories") suggestions.add("Accent Piece");
 
     return Array.from(suggestions).slice(0, 10);
@@ -229,7 +228,7 @@ export default function UploadPage() {
                     value={category}
                   />
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {categories.map((option) => (
+                    {clothingCategories.map((option) => (
                       <button
                         key={option}
                         type="button"

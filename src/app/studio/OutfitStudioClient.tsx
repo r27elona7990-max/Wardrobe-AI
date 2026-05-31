@@ -16,6 +16,7 @@ import {
   Wand2
 } from "lucide-react";
 import { saveOutfit } from "@/app/actions/outfit";
+import { clothingCategories, isBottomCategory, isShoesCategory, isTopCategory } from "@/lib/clothingCategories";
 
 interface DbClothingItem {
   id: string;
@@ -82,11 +83,11 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
 
   const selectItem = (item: DbClothingItem) => {
     // Map categories to appropriate slots
-    if (item.category === "Tops" || item.category === "Outerwear") {
+    if (isTopCategory(item.category)) {
       setTop(item);
-    } else if (item.category === "Bottoms") {
+    } else if (isBottomCategory(item.category)) {
       setBottom(item);
-    } else if (item.category === "Shoes") {
+    } else if (isShoesCategory(item.category)) {
       setShoes(item);
     }
   };
@@ -107,12 +108,12 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
   };
 
   const handleAutoStyle = () => {
-    const suggestedTop = pickBestItem((item) => item.category === "Tops" || item.category === "Outerwear");
-    const suggestedBottom = pickBestItem((item) => item.category === "Bottoms");
-    const suggestedShoes = pickBestItem((item) => item.category === "Shoes");
+    const suggestedTop = pickBestItem((item) => isTopCategory(item.category));
+    const suggestedBottom = pickBestItem((item) => isBottomCategory(item.category));
+    const suggestedShoes = pickBestItem((item) => isShoesCategory(item.category));
 
     if (!suggestedTop || !suggestedBottom || !suggestedShoes) {
-      setStylistMessage("Upload at least one top or jacket, one bottom, and one pair of shoes so I can build a complete fit.");
+      setStylistMessage("Upload at least one top or style piece, one bottom or skirt, and one pair of shoes so I can build a complete fit.");
       return;
     }
 
@@ -162,7 +163,9 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
   // Filter sidebar item list by active tab
   const filteredItems = initialItems.filter(item => {
     if (activeTab === "All") return true;
-    if (activeTab === "Tops") return item.category === "Tops" || item.category === "Outerwear";
+    if (activeTab === "Tops") return isTopCategory(item.category);
+    if (activeTab === "Bottoms") return isBottomCategory(item.category);
+    if (activeTab === "Shoes") return isShoesCategory(item.category);
     return item.category === activeTab;
   });
 
@@ -203,7 +206,7 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
           
           {/* Scroll Tabs */}
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide text-[10px] font-bold uppercase tracking-wider">
-            {["All", "Tops", "Bottoms", "Shoes"].map((tab) => (
+            {["All", ...clothingCategories].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}

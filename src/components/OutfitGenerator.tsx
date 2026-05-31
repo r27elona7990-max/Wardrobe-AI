@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Sparkles, Wand2 } from "lucide-react";
 import { saveOutfit } from "@/app/actions/outfit";
+import { isBottomCategory, isShoesCategory, isTopCategory } from "@/lib/clothingCategories";
 
 type ClothingItem = {
   id: string;
@@ -67,9 +68,9 @@ export default function OutfitGenerator({ items }: OutfitGeneratorProps) {
   const [generatedNames, setGeneratedNames] = useState<string[]>([]);
 
   const hasEnoughPieces = useMemo(() => {
-    const hasTop = items.some((item) => item.category === "Tops" || item.category === "Outerwear");
-    const hasBottom = items.some((item) => item.category === "Bottoms");
-    const hasShoes = items.some((item) => item.category === "Shoes");
+    const hasTop = items.some((item) => isTopCategory(item.category));
+    const hasBottom = items.some((item) => isBottomCategory(item.category));
+    const hasShoes = items.some((item) => isShoesCategory(item.category));
 
     return hasTop && hasBottom && hasShoes;
   }, [items]);
@@ -79,7 +80,7 @@ export default function OutfitGenerator({ items }: OutfitGeneratorProps) {
     setGeneratedNames([]);
 
     if (!hasEnoughPieces) {
-      setMessage("Upload at least one top or jacket, one bottom, and one pair of shoes first.");
+      setMessage("Upload at least one top or style piece, one bottom or skirt, and one pair of shoes first.");
       return;
     }
 
@@ -87,15 +88,15 @@ export default function OutfitGenerator({ items }: OutfitGeneratorProps) {
 
     const top = pickBest(
       items,
-      (item) => item.category === "Tops" || item.category === "Outerwear",
+      (item) => isTopCategory(item.category),
       event,
       weather
     );
-    const bottom = pickBest(items, (item) => item.category === "Bottoms", event, weather);
-    const shoes = pickBest(items, (item) => item.category === "Shoes", event, weather);
+    const bottom = pickBest(items, (item) => isBottomCategory(item.category), event, weather);
+    const shoes = pickBest(items, (item) => isShoesCategory(item.category), event, weather);
 
     if (!top || !bottom || !shoes) {
-      setMessage("I need a top or jacket, a bottom, and shoes to generate a complete fit.");
+      setMessage("I need a top or style piece, a bottom or skirt, and shoes to generate a complete fit.");
       setIsGenerating(false);
       return;
     }
