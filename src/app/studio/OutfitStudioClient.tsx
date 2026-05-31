@@ -38,6 +38,7 @@ interface SuggestedDraft {
   bottom: DbClothingItem;
   shoes: DbClothingItem;
   accessories?: DbClothingItem;
+  score: number;
 }
 
 const occasions = ["Casual", "College", "Work", "Date", "Party", "Travel"];
@@ -57,6 +58,7 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
   const [occasion, setOccasion] = useState("Casual");
   const [weather, setWeather] = useState("Mild");
   const [stylistMessage, setStylistMessage] = useState<string | null>(null);
+  const [draftCycle, setDraftCycle] = useState(0);
   
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -97,7 +99,7 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
       .slice(0, limit);
   };
 
-  const buildBestDraft = (): SuggestedDraft | null => {
+  const buildRankedDrafts = (): SuggestedDraft[] => {
     const topOptions = getBestCandidates((item) => isTopCategory(item.category));
     const bottomOptions = getBestCandidates((item) => isBottomCategory(item.category));
     const shoeOptions = getBestCandidates((item) => isShoesCategory(item.category));
@@ -106,14 +108,13 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
       ...getBestCandidates((item) => item.category === "Accessories", 5),
     ];
 
-    let bestDraft: SuggestedDraft | null = null;
-    let bestScore = Number.NEGATIVE_INFINITY;
+    const rankedDrafts: SuggestedDraft[] = [];
 
     for (const topOption of topOptions) {
       for (const bottomOption of bottomOptions) {
         for (const shoeOption of shoeOptions) {
           for (const accessoryOption of accessoryOptions) {
-            const draft: SuggestedDraft = {
+            const draft = {
               top: topOption,
               bottom: bottomOption,
               shoes: shoeOption,
@@ -121,31 +122,32 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
             };
             const { score } = scoreOutfitDraft(draft, styleContext);
 
-            if (score > bestScore) {
-              bestDraft = draft;
-              bestScore = score;
-            }
+            rankedDrafts.push({ ...draft, score });
           }
         }
       }
     }
 
-    return bestDraft;
+    return rankedDrafts.sort((a, b) => b.score - a.score);
   };
 
   const handleAutoStyle = () => {
-    const suggestedDraft = buildBestDraft();
+    const rankedDrafts = buildRankedDrafts();
 
-    if (!suggestedDraft) {
+    if (rankedDrafts.length === 0) {
       setStylistMessage("Upload at least one top or style piece, one bottom or skirt, and one pair of shoes so I can build a complete fit.");
       return;
     }
+
+    const suggestionPool = rankedDrafts.slice(0, Math.min(8, rankedDrafts.length));
+    const suggestedDraft = suggestionPool[draftCycle % suggestionPool.length];
 
     setTop(suggestedDraft.top);
     setBottom(suggestedDraft.bottom);
     setShoes(suggestedDraft.shoes);
     setAccessories(suggestedDraft.accessories ?? null);
     setStylistMessage(buildStylistExplanation(suggestedDraft, styleContext));
+    setDraftCycle((currentCycle) => currentCycle + 1);
   };
 
   const handleOpenSaveModal = () => {
