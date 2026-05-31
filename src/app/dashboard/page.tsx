@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import OutfitGenerator from "@/components/OutfitGenerator";
 
 export default async function Dashboard() {
   const session = await getServerSession(authOptions);
@@ -34,7 +35,7 @@ export default async function Dashboard() {
   // Fetch all user items to aggregate tag insights
   const allItems = await prisma.clothingItem.findMany({
     where: { userId },
-    select: { tags: true },
+    select: { id: true, name: true, category: true, tags: true },
   });
 
   // Calculate most common tag / color
@@ -206,6 +207,8 @@ export default async function Dashboard() {
           </Link>
         </div>
       </section>
+
+      <OutfitGenerator items={allItems} />
 
       {/* Recent Drops */}
       <section className="space-y-6">
