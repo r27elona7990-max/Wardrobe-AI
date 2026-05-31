@@ -12,7 +12,8 @@ import {
   Trash2,
   X,
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  Wand2
 } from "lucide-react";
 import { saveOutfit } from "@/app/actions/outfit";
 
@@ -30,6 +31,28 @@ interface OutfitStudioClientProps {
   initialItems: DbClothingItem[];
 }
 
+const occasions = ["Casual", "College", "Work", "Date", "Party", "Travel"];
+const weatherOptions = ["Hot", "Mild", "Cold", "Rainy"];
+
+const occasionKeywords: Record<string, string[]> = {
+  Casual: ["casual", "streetwear", "everyday", "denim", "tee", "hoodie"],
+  College: ["casual", "comfortable", "streetwear", "sneaker", "denim", "backpack"],
+  Work: ["formal", "workwear", "office", "smart", "shirt", "blazer"],
+  Date: ["dressy", "cute", "soft", "statement", "classic", "minimal"],
+  Party: ["party", "statement", "bright", "silk", "dressy", "y2k"],
+  Travel: ["comfortable", "casual", "layering", "sneaker", "neutral", "everyday"],
+};
+
+const weatherKeywords: Record<string, string[]> = {
+  Hot: ["summer", "linen", "shorts", "tee", "light", "fresh"],
+  Mild: ["spring", "fall", "casual", "everyday", "layering"],
+  Cold: ["winter", "wool", "knit", "hoodie", "jacket", "coat", "layering"],
+  Rainy: ["outerwear", "jacket", "boot", "layering", "waterproof", "dark"],
+};
+
+const getItemText = (item: DbClothingItem) =>
+  `${item.name} ${item.category} ${item.tags ?? ""}`.toLowerCase();
+
 export default function OutfitStudioClient({ initialItems }: OutfitStudioClientProps) {
   const router = useRouter();
 
@@ -40,6 +63,9 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
 
   // Tab Filtering for the Sidebar
   const [activeTab, setActiveTab] = useState<string>("All");
+  const [occasion, setOccasion] = useState("Casual");
+  const [weather, setWeather] = useState("Mild");
+  const [stylistMessage, setStylistMessage] = useState<string | null>(null);
   
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,6 +89,37 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
     } else if (item.category === "Shoes") {
       setShoes(item);
     }
+  };
+
+  const scoreItem = (item: DbClothingItem) => {
+    const text = getItemText(item);
+    const keywords = [...occasionKeywords[occasion], ...weatherKeywords[weather]];
+
+    return keywords.reduce((score, keyword) => {
+      return text.includes(keyword) ? score + 2 : score;
+    }, Math.random());
+  };
+
+  const pickBestItem = (categoryMatch: (item: DbClothingItem) => boolean) => {
+    return initialItems
+      .filter(categoryMatch)
+      .sort((a, b) => scoreItem(b) - scoreItem(a))[0];
+  };
+
+  const handleAutoStyle = () => {
+    const suggestedTop = pickBestItem((item) => item.category === "Tops" || item.category === "Outerwear");
+    const suggestedBottom = pickBestItem((item) => item.category === "Bottoms");
+    const suggestedShoes = pickBestItem((item) => item.category === "Shoes");
+
+    if (!suggestedTop || !suggestedBottom || !suggestedShoes) {
+      setStylistMessage("Upload at least one top or jacket, one bottom, and one pair of shoes so I can build a complete fit.");
+      return;
+    }
+
+    setTop(suggestedTop);
+    setBottom(suggestedBottom);
+    setShoes(suggestedShoes);
+    setStylistMessage(`Drafted a ${weather.toLowerCase()} ${occasion.toLowerCase()} fit on the canvas. Swap anything you want before saving.`);
   };
 
   const handleOpenSaveModal = () => {
@@ -121,9 +178,9 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
       return `Looking clean! The fit is taking shape. Just pick the perfect pair of shoes to seal this look.`;
     }
     if (top && bottom && shoes) {
-      return `Absolute fire! This outfit matches perfectly. Click "Lock in this fit" below to secure it in your vault.`;
+      return stylistMessage ?? `This ${weather.toLowerCase()} ${occasion.toLowerCase()} draft is ready. Tweak it if needed, then lock it in.`;
     }
-    return "Mix and match to find your identity. Feel free to re-arrange the canvas slots at any time!";
+    return stylistMessage ?? "Mix and match to find your identity. Feel free to re-arrange the canvas slots at any time!";
   };
 
   const getPlaceholderClass = (category: string) => {
@@ -336,16 +393,65 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
       <aside className="xl:w-80 glass rounded-nebula border border-black/5 flex flex-col overflow-hidden">
         <div className="p-6 border-b border-black/5 bg-black/5">
           <h2 className="text-sm font-black uppercase tracking-widest text-nebula-tertiary flex items-center gap-2">
-            <Sparkles size={16} /> AI Stylist
+            <Sparkles size={16} /> Stylist Draft
           </h2>
         </div>
         <div className="p-6 space-y-6">
           <div className="p-4 bg-nebula-tertiary/10 rounded-nebula-inner border border-nebula-tertiary/20 space-y-3">
-             <p className="text-[10px] font-black uppercase tracking-widest text-nebula-tertiary">Current Vibe</p>
+             <p className="text-[10px] font-black uppercase tracking-widest text-nebula-tertiary">Canvas Draft</p>
              <p className="text-xs text-nebula-on-surface/60 leading-relaxed italic">
                &quot;{getStylistTip()}&quot;
              </p>
           </div>
+
+          <div className="space-y-3">
+             <h4 className="text-[10px] font-black uppercase tracking-widest text-nebula-on-surface/40 px-1">Occasion</h4>
+             <div className="grid grid-cols-2 gap-2">
+               {occasions.map((option) => (
+                 <button
+                   key={option}
+                   type="button"
+                   onClick={() => setOccasion(option)}
+                   className={`min-h-10 rounded-nebula-inner border px-3 text-xs font-bold transition-all ${
+                     occasion === option
+                       ? "bg-nebula-primary text-nebula-bg border-nebula-primary"
+                       : "bg-black/5 text-nebula-on-surface/60 border-black/5 hover:text-nebula-primary hover:border-nebula-primary/40"
+                   }`}
+                 >
+                   {option}
+                 </button>
+               ))}
+             </div>
+          </div>
+
+          <div className="space-y-3">
+             <h4 className="text-[10px] font-black uppercase tracking-widest text-nebula-on-surface/40 px-1">Weather</h4>
+             <div className="grid grid-cols-2 gap-2">
+               {weatherOptions.map((option) => (
+                 <button
+                   key={option}
+                   type="button"
+                   onClick={() => setWeather(option)}
+                   className={`min-h-10 rounded-nebula-inner border px-3 text-xs font-bold transition-all ${
+                     weather === option
+                       ? "bg-nebula-tertiary text-nebula-bg border-nebula-tertiary"
+                       : "bg-black/5 text-nebula-on-surface/60 border-black/5 hover:text-nebula-tertiary hover:border-nebula-tertiary/40"
+                   }`}
+                 >
+                   {option}
+                 </button>
+               ))}
+             </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleAutoStyle}
+            className="w-full py-4 bg-nebula-primary text-nebula-bg font-black rounded-full flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-nebula-primary/20"
+          >
+            <Wand2 size={18} />
+            <span className="uppercase tracking-widest text-xs">Auto-Fill Canvas</span>
+          </button>
 
           <div className="space-y-4">
              <h4 className="text-[10px] font-black uppercase tracking-widest text-nebula-on-surface/40 px-1">Style Guidelines</h4>
