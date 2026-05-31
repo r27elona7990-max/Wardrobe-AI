@@ -61,6 +61,7 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
   const [top, setTop] = useState<DbClothingItem | null>(null);
   const [bottom, setBottom] = useState<DbClothingItem | null>(null);
   const [shoes, setShoes] = useState<DbClothingItem | null>(null);
+  const [accessories, setAccessories] = useState<DbClothingItem | null>(null);
 
   // Tab Filtering for the Sidebar
   const [activeTab, setActiveTab] = useState<string>("All");
@@ -79,11 +80,14 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
     setTop(null);
     setBottom(null);
     setShoes(null);
+    setAccessories(null);
   };
 
   const selectItem = (item: DbClothingItem) => {
     // Map categories to appropriate slots
-    if (isTopCategory(item.category)) {
+    if (item.category === "Accessories") {
+      setAccessories(item);
+    } else if (isTopCategory(item.category)) {
       setTop(item);
     } else if (isBottomCategory(item.category)) {
       setBottom(item);
@@ -111,6 +115,7 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
     const suggestedTop = pickBestItem((item) => isTopCategory(item.category));
     const suggestedBottom = pickBestItem((item) => isBottomCategory(item.category));
     const suggestedShoes = pickBestItem((item) => isShoesCategory(item.category));
+    const suggestedAccessories = pickBestItem((item) => item.category === "Accessories");
 
     if (!suggestedTop || !suggestedBottom || !suggestedShoes) {
       setStylistMessage("Upload at least one top or style piece, one bottom or skirt, and one pair of shoes so I can build a complete fit.");
@@ -120,6 +125,7 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
     setTop(suggestedTop);
     setBottom(suggestedBottom);
     setShoes(suggestedShoes);
+    setAccessories(suggestedAccessories ?? null);
     setStylistMessage(`Drafted a ${weather.toLowerCase()} ${occasion.toLowerCase()} fit on the canvas. Swap anything you want before saving.`);
   };
 
@@ -143,7 +149,7 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
     setIsSaving(true);
     setError(null);
 
-    const itemIds = [top.id, bottom.id, shoes.id];
+    const itemIds = [top.id, bottom.id, shoes.id, accessories?.id].filter((id): id is string => Boolean(id));
     const result = await saveOutfit(outfitName.trim(), itemIds);
 
     if (result.error) {
@@ -229,7 +235,7 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
             </div>
           ) : (
             filteredItems.map((item) => {
-              const isSelected = top?.id === item.id || bottom?.id === item.id || shoes?.id === item.id;
+              const isSelected = top?.id === item.id || bottom?.id === item.id || shoes?.id === item.id || accessories?.id === item.id;
               
               return (
                 <div 
@@ -279,7 +285,7 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
          </div>
 
          {/* Canvas Slots */}
-         <div className="flex-1 flex flex-col items-center justify-center p-10 space-y-6 relative mt-10">
+         <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-start p-10 pt-24 space-y-6 relative scrollbar-hide">
             {/* Top Slot */}
             <div className={`w-48 h-52 rounded-nebula border-2 border-dashed flex flex-col items-center justify-center transition-all relative overflow-hidden ${top ? "border-nebula-secondary bg-black/5 scale-102" : "border-black/10 bg-transparent hover:border-nebula-secondary/40"}`}>
               {top ? (
@@ -346,7 +352,7 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
               )}
             </div>
 
-            {/* Shoes Slot */}
+            {/* Footwear Slot */}
             <div className={`w-40 h-32 rounded-nebula border-2 border-dashed flex flex-col items-center justify-center transition-all relative overflow-hidden ${shoes ? "border-nebula-tertiary bg-black/5 scale-102" : "border-black/10 bg-transparent hover:border-nebula-tertiary/40"}`}>
               {shoes ? (
                 <div className="relative group w-full h-full flex flex-col items-center justify-center p-3">
@@ -374,7 +380,40 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
               ) : (
                 <div className="text-center">
                   <Plus className="mx-auto text-nebula-on-surface/10 mb-1" size={24} />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-nebula-on-surface/30">Kicks / Shoes</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-nebula-on-surface/30">Footwear</span>
+                </div>
+              )}
+            </div>
+
+            {/* Accessories Slot */}
+            <div className={`w-40 h-32 rounded-nebula border-2 border-dashed flex flex-col items-center justify-center transition-all relative overflow-hidden ${accessories ? "border-nebula-secondary bg-black/5 scale-102" : "border-black/10 bg-transparent hover:border-nebula-secondary/40"}`}>
+              {accessories ? (
+                <div className="relative group w-full h-full flex flex-col items-center justify-center p-3">
+                  {accessories.imagePath && (
+                    <div className="relative w-full h-full rounded-nebula-inner overflow-hidden">
+                      <Image 
+                        src={accessories.imagePath} 
+                        alt={accessories.name} 
+                        fill
+                        sizes="160px"
+                        className="object-cover"
+                      />
+                    </div>
+                  )}
+                  <button 
+                    onClick={() => setAccessories(null)} 
+                    className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                  <p className="absolute bottom-2 left-2 right-2 bg-black/50 text-[10px] font-bold uppercase tracking-widest text-white px-2 py-1 rounded backdrop-blur-sm truncate text-center z-10">
+                    {accessories.name}
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <Plus className="mx-auto text-nebula-on-surface/10 mb-1" size={24} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-nebula-on-surface/30">Accessories</span>
                 </div>
               )}
             </div>
