@@ -133,7 +133,7 @@ export default function OutfitGenerator({ items }: OutfitGeneratorProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-7 xl:gap-10">
         <div className="space-y-2">
           <span className="text-[10px] font-black uppercase tracking-widest text-nebula-on-surface/40">
             Event
