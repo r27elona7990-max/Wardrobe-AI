@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useDropzone } from "react-dropzone";
 import { uploadClothingItem } from "@/app/actions/upload";
 import { useRouter } from "next/navigation";
@@ -52,6 +52,7 @@ export default function UploadPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDone, setIsDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const categoryMenuRef = useRef<HTMLDivElement>(null);
   
   const router = useRouter();
 
@@ -67,6 +68,20 @@ export default function UploadPage() {
     accept: { "image/*": [] },
     multiple: false
   });
+
+  useEffect(() => {
+    const closeCategoryMenu = (event: PointerEvent) => {
+      if (!categoryMenuRef.current?.contains(event.target as Node)) {
+        setOpenCategoryMenu(null);
+      }
+    };
+
+    document.addEventListener("pointerdown", closeCategoryMenu);
+
+    return () => {
+      document.removeEventListener("pointerdown", closeCategoryMenu);
+    };
+  }, []);
 
   const suggestedTags = useMemo(() => {
     const sourceText = `${pieceName} ${category} ${categoryStyle} ${file?.name ?? ""}`.toLowerCase();
@@ -275,7 +290,7 @@ export default function UploadPage() {
                     name="category"
                     value={category}
                   />
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div ref={categoryMenuRef} className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {clothingCategories.map((option) => {
                       const styleOptions = categoryStyleOptions[option] ?? [];
                       const hasStyles = styleOptions.length > 0;
