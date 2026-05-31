@@ -14,6 +14,8 @@ import {
   Image as ImageIcon
 } from "lucide-react";
 
+const categories = ["Tops", "Bottoms", "Outerwear", "Shoes", "Accessories"];
+
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -221,20 +223,28 @@ export default function UploadPage() {
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-nebula-on-surface/30 ml-1">Category</label>
-                  <select 
+                  <input
+                    type="hidden"
                     name="category"
-                    required
-                    disabled={isProcessing || isDone}
                     value={category}
-                    onChange={(event) => setCategory(event.target.value)}
-                    className="w-full bg-black/5 border border-black/5 rounded-nebula-inner px-4 py-3 outline-none focus:border-nebula-primary/50 focus:bg-black/10 transition-all text-sm appearance-none disabled:opacity-50"
-                  >
-                    <option value="Tops">Tops</option>
-                    <option value="Bottoms">Bottoms</option>
-                    <option value="Outerwear">Outerwear</option>
-                    <option value="Shoes">Shoes</option>
-                    <option value="Accessories">Accessories</option>
-                  </select>
+                  />
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {categories.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        disabled={isProcessing || isDone}
+                        onClick={() => setCategory(option)}
+                        className={`min-h-11 rounded-nebula-inner border px-3 text-sm font-bold transition-all disabled:opacity-50 ${
+                          category === option
+                            ? "bg-nebula-secondary text-nebula-bg border-nebula-secondary shadow-lg shadow-nebula-secondary/15"
+                            : "bg-black/5 text-nebula-on-surface/60 border-black/5 hover:border-nebula-secondary/40 hover:text-nebula-secondary"
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="space-y-2">

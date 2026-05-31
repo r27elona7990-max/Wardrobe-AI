@@ -133,40 +133,50 @@ export default function OutfitGenerator({ items }: OutfitGeneratorProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <label className="space-y-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="space-y-2">
           <span className="text-[10px] font-black uppercase tracking-widest text-nebula-on-surface/40">
             Event
           </span>
-          <select
-            value={event}
-            onChange={(changeEvent) => setEvent(changeEvent.target.value)}
-            className="w-full bg-black/5 border border-black/5 rounded-nebula-inner px-4 py-3 outline-none focus:border-nebula-primary/50 text-sm font-bold"
-          >
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {events.map((option) => (
-              <option key={option} value={option}>
+              <button
+                key={option}
+                type="button"
+                onClick={() => setEvent(option)}
+                className={`min-h-11 rounded-nebula-inner border px-3 text-sm font-bold transition-all ${
+                  event === option
+                    ? "bg-nebula-primary text-nebula-bg border-nebula-primary shadow-lg shadow-nebula-primary/15"
+                    : "bg-black/5 text-nebula-on-surface/60 border-black/5 hover:border-nebula-primary/40 hover:text-nebula-primary"
+                }`}
+              >
                 {option}
-              </option>
+              </button>
             ))}
-          </select>
-        </label>
+          </div>
+        </div>
 
-        <label className="space-y-2">
+        <div className="space-y-2">
           <span className="text-[10px] font-black uppercase tracking-widest text-nebula-on-surface/40">
             Weather
           </span>
-          <select
-            value={weather}
-            onChange={(changeEvent) => setWeather(changeEvent.target.value)}
-            className="w-full bg-black/5 border border-black/5 rounded-nebula-inner px-4 py-3 outline-none focus:border-nebula-primary/50 text-sm font-bold"
-          >
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2">
             {weatherOptions.map((option) => (
-              <option key={option} value={option}>
+              <button
+                key={option}
+                type="button"
+                onClick={() => setWeather(option)}
+                className={`min-h-11 rounded-nebula-inner border px-3 text-sm font-bold transition-all ${
+                  weather === option
+                    ? "bg-nebula-secondary text-nebula-bg border-nebula-secondary shadow-lg shadow-nebula-secondary/15"
+                    : "bg-black/5 text-nebula-on-surface/60 border-black/5 hover:border-nebula-secondary/40 hover:text-nebula-secondary"
+                }`}
+              >
                 {option}
-              </option>
+              </button>
             ))}
-          </select>
-        </label>
+          </div>
+        </div>
       </div>
 
       <button
