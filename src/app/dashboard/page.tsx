@@ -9,6 +9,7 @@ import OutfitGenerator from "@/components/OutfitGenerator";
 import PackingListGenerator from "@/components/PackingListGenerator";
 import SavedFits from "@/components/SavedFits";
 import WardrobeStatsPanel from "@/components/WardrobeStatsPanel";
+import { clothingCategories } from "@/lib/clothingCategories";
 
 export default async function Dashboard() {
   const session = await getServerSession(authOptions);
@@ -95,7 +96,7 @@ export default async function Dashboard() {
     });
 
     // Sort items to match original order (Top, Bottom, Shoes)
-    const categoryOrder = ["Tops", "Outerwear", "Bottoms", "Shoes"];
+    const categoryOrder = clothingCategories;
     outfitItems = dbItems.sort((a, b) => {
       const idxA = categoryOrder.indexOf(a.category);
       const idxB = categoryOrder.indexOf(b.category);

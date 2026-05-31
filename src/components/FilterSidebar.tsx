@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ChevronRight, Filter, X } from "lucide-react";
+import { clothingCategories } from "@/lib/clothingCategories";
 
-const categories = ["Tops", "Bottoms", "Outerwear", "Shoes", "Accessories"];
 const seasons = ["Summer", "Winter", "Spring/Fall"];
 const colors = [
   { name: "Nebula Blue", class: "bg-nebula-primary" },
@@ -135,7 +135,7 @@ export default function FilterSidebar({
         <div className="space-y-3">
           <h4 className="text-sm font-bold text-nebula-on-surface">Category</h4>
           <div className="space-y-1">
-            {categories.map((cat) => {
+            {clothingCategories.map((cat) => {
               const isActive = activeCategory === cat;
               return (
                 <Link 

@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { clothingCategories } from "@/lib/clothingCategories";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -34,7 +35,7 @@ export async function GET() {
     },
   });
 
-  const categoryOrder = ["Tops", "Outerwear", "Bottoms", "Shoes", "Accessories"];
+  const categoryOrder = clothingCategories;
   const itemNames = items
     .sort((a, b) => {
       const indexA = categoryOrder.indexOf(a.category);
