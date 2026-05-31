@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useDropzone } from "react-dropzone";
 import { uploadClothingItem } from "@/app/actions/upload";
 import { useRouter } from "next/navigation";
@@ -17,6 +17,9 @@ import {
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [pieceName, setPieceName] = useState("");
+  const [category, setCategory] = useState("Tops");
+  const [tags, setTags] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDone, setIsDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +38,63 @@ export default function UploadPage() {
     accept: { "image/*": [] },
     multiple: false
   });
+
+  const suggestedTags = useMemo(() => {
+    const sourceText = `${pieceName} ${category} ${file?.name ?? ""}`.toLowerCase();
+    const suggestions = new Set<string>();
+
+    suggestions.add(category);
+
+    const rules: Array<[string[], string[]]> = [
+      [["white", "cream", "ivory"], ["White", "Minimal"]],
+      [["black", "charcoal"], ["Black", "Classic"]],
+      [["blue", "denim", "navy"], ["Nebula Blue", "Casual"]],
+      [["pink", "rose"], ["Soft Pink", "Cute"]],
+      [["purple", "lavender", "violet"], ["Lavender", "Soft"]],
+      [["green", "mint", "sage"], ["Mint", "Fresh"]],
+      [["red", "maroon", "burgundy"], ["Statement"]],
+      [["yellow", "gold"], ["Bright"]],
+      [["brown", "tan", "beige"], ["Neutral"]],
+      [["tee", "tshirt", "t-shirt", "hoodie", "sweatshirt"], ["Streetwear", "Casual"]],
+      [["shirt", "blouse"], ["Smart Casual"]],
+      [["jean", "denim"], ["Denim", "Everyday"]],
+      [["dress", "skirt"], ["Dressy"]],
+      [["jacket", "coat", "blazer"], ["Layering", "Winter"]],
+      [["sneaker", "shoe", "boot"], ["Footwear", "Streetwear"]],
+      [["summer", "linen", "shorts"], ["Summer"]],
+      [["winter", "wool", "knit"], ["Winter"]],
+      [["party", "sequin", "silk"], ["Party"]],
+      [["gym", "sport", "active"], ["Activewear"]],
+      [["vintage", "retro"], ["Vintage"]],
+      [["y2k"], ["Y2K"]],
+      [["formal", "office", "work"], ["Formal", "Workwear"]],
+    ];
+
+    rules.forEach(([keywords, tagsToAdd]) => {
+      if (keywords.some((keyword) => sourceText.includes(keyword))) {
+        tagsToAdd.forEach((tag) => suggestions.add(tag));
+      }
+    });
+
+    if (category === "Outerwear") suggestions.add("Layering");
+    if (category === "Shoes") suggestions.add("Footwear");
+    if (category === "Accessories") suggestions.add("Accent Piece");
+
+    return Array.from(suggestions).slice(0, 10);
+  }, [category, file?.name, pieceName]);
+
+  const addSuggestedTag = (tag: string) => {
+    const currentTags = tags
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    if (currentTags.some((item) => item.toLowerCase() === tag.toLowerCase())) {
+      return;
+    }
+
+    setTags([...currentTags, tag].join(", "));
+  };
 
   async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -152,6 +212,8 @@ export default function UploadPage() {
                     required
                     disabled={isProcessing || isDone}
                     type="text" 
+                    value={pieceName}
+                    onChange={(event) => setPieceName(event.target.value)}
                     placeholder="e.g. Vintage Oversized Tee"
                     className="w-full bg-black/5 border border-black/5 rounded-nebula-inner px-4 py-3 outline-none focus:border-nebula-primary/50 focus:bg-black/10 transition-all text-sm disabled:opacity-50"
                   />
@@ -163,6 +225,8 @@ export default function UploadPage() {
                     name="category"
                     required
                     disabled={isProcessing || isDone}
+                    value={category}
+                    onChange={(event) => setCategory(event.target.value)}
                     className="w-full bg-black/5 border border-black/5 rounded-nebula-inner px-4 py-3 outline-none focus:border-nebula-primary/50 focus:bg-black/10 transition-all text-sm appearance-none disabled:opacity-50"
                   >
                     <option value="Tops">Tops</option>
@@ -179,9 +243,24 @@ export default function UploadPage() {
                     name="tags"
                     disabled={isProcessing || isDone}
                     type="text" 
+                    value={tags}
+                    onChange={(event) => setTags(event.target.value)}
                     placeholder="e.g. Streetwear, Y2K, Summer"
                     className="w-full bg-black/5 border border-black/5 rounded-nebula-inner px-4 py-3 outline-none focus:border-nebula-primary/50 focus:bg-black/10 transition-all text-sm disabled:opacity-50"
                   />
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {suggestedTags.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        disabled={isProcessing || isDone}
+                        onClick={() => addSuggestedTag(tag)}
+                        className="px-3 py-1.5 rounded-full bg-nebula-primary/10 border border-nebula-primary/20 text-nebula-primary text-[10px] font-bold uppercase tracking-widest hover:bg-nebula-primary/20 disabled:opacity-50 transition-colors"
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
