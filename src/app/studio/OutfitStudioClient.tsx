@@ -193,7 +193,7 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
   };
 
   return (
-    <div className="flex flex-col xl:flex-row h-[calc(100vh-120px)] gap-8">
+    <div className="flex flex-col xl:flex-row xl:h-[calc(100vh-120px)] gap-8 pb-8 xl:pb-0">
       {/* Col 1: Wardrobe Scroller */}
       <aside className="xl:w-80 flex flex-col glass rounded-nebula border border-black/5 overflow-hidden">
         <div className="p-6 border-b border-black/5 bg-black/5 flex flex-col gap-4">
@@ -393,13 +393,13 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
       </main>
 
       {/* Col 3: AI Assistant */}
-      <aside className="xl:w-80 glass rounded-nebula border border-black/5 flex flex-col overflow-hidden">
+      <aside className="xl:w-80 xl:max-h-[calc(100vh-120px)] glass rounded-nebula border border-black/5 flex flex-col overflow-hidden">
         <div className="p-6 border-b border-black/5 bg-black/5">
           <h2 className="text-sm font-black uppercase tracking-widest text-nebula-tertiary flex items-center gap-2">
             <Sparkles size={16} /> Stylist Draft
           </h2>
         </div>
-        <div className="p-6 space-y-6">
+        <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6 scrollbar-hide">
           <div className="p-4 bg-nebula-tertiary/10 rounded-nebula-inner border border-nebula-tertiary/20 space-y-3">
              <p className="text-[10px] font-black uppercase tracking-widest text-nebula-tertiary">Canvas Draft</p>
              <p className="text-xs text-nebula-on-surface/60 leading-relaxed italic">
