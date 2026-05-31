@@ -50,7 +50,7 @@ export default async function Dashboard() {
     }
   });
 
-  let mostWornColor = "Off-White";
+  let mostWornColor = totalDrops === 0 ? "No pieces yet" : "No tags yet";
   let maxCount = 0;
   Object.entries(tagCounts).forEach(([tag, count]) => {
     if (count > maxCount) {
