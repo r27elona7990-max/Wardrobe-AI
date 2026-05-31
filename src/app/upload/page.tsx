@@ -25,13 +25,29 @@ const topStyleOptions = [
   "Corset & Going-Out Tops",
 ];
 
+const categoryStyleOptions: Partial<Record<string, string[]>> = {
+  Tops: topStyleOptions,
+  Shirts: ["Formal Shirts", "Casual Shirts", "Oversized Shirts", "Printed Shirts"],
+  "T-Shirts": ["Basic Tees", "Graphic Tees", "Oversized Tees", "Fitted Tees"],
+  Bottoms: ["Jeans", "Trousers", "Shorts", "Cargo Pants", "Leggings"],
+  Dresses: ["Casual Dresses", "Party Dresses", "Bodycon Dresses", "Maxi Dresses"],
+  Skirts: ["Mini Skirts", "Midi Skirts", "Denim Skirts", "Pleated Skirts"],
+  Shoes: ["Sneakers", "Flats", "Loafers", "Sandals"],
+  Heels: ["Block Heels", "Stilettos", "Platform Heels", "Kitten Heels"],
+  Boots: ["Ankle Boots", "Knee-High Boots", "Combat Boots", "Chelsea Boots"],
+  Formal: ["Office Wear", "Blazers", "Formal Sets", "Smart Casual"],
+  Sports: ["Gym Wear", "Athleisure", "Tracksuits", "Sports Shoes"],
+  Casual: ["Everyday Basics", "Streetwear", "Lounge Fits", "Weekend Fits"],
+  Accessories: ["Bags", "Belts", "Jewelry", "Hats"],
+};
+
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [pieceName, setPieceName] = useState("");
   const [category, setCategory] = useState("Tops");
-  const [topStyle, setTopStyle] = useState("");
-  const [isTopsMenuOpen, setIsTopsMenuOpen] = useState(false);
+  const [categoryStyle, setCategoryStyle] = useState("");
+  const [openCategoryMenu, setOpenCategoryMenu] = useState<string | null>(null);
   const [tags, setTags] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDone, setIsDone] = useState(false);
@@ -53,11 +69,11 @@ export default function UploadPage() {
   });
 
   const suggestedTags = useMemo(() => {
-    const sourceText = `${pieceName} ${category} ${topStyle} ${file?.name ?? ""}`.toLowerCase();
+    const sourceText = `${pieceName} ${category} ${categoryStyle} ${file?.name ?? ""}`.toLowerCase();
     const suggestions = new Set<string>();
 
     suggestions.add(category);
-    if (category === "Tops" && topStyle) suggestions.add(topStyle);
+    if (categoryStyle) suggestions.add(categoryStyle);
 
     const rules: Array<[string[], string[]]> = [
       [["white", "cream", "ivory"], ["White", "Minimal"]],
@@ -100,7 +116,7 @@ export default function UploadPage() {
     if (category === "Accessories") suggestions.add("Accent Piece");
 
     return Array.from(suggestions).slice(0, 10);
-  }, [category, file?.name, pieceName, topStyle]);
+  }, [category, categoryStyle, file?.name, pieceName]);
 
   const addSuggestedTag = (tag: string) => {
     const currentTags = tags
@@ -121,8 +137,8 @@ export default function UploadPage() {
       .map((item) => item.trim())
       .filter(Boolean);
 
-    if (category === "Tops" && topStyle && !currentTags.some((item) => item.toLowerCase() === topStyle.toLowerCase())) {
-      currentTags.push(topStyle);
+    if (categoryStyle && !currentTags.some((item) => item.toLowerCase() === categoryStyle.toLowerCase())) {
+      currentTags.push(categoryStyle);
     }
 
     return currentTags.join(", ");
@@ -261,8 +277,10 @@ export default function UploadPage() {
                   />
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {clothingCategories.map((option) => {
-                      const isTops = option === "Tops";
+                      const styleOptions = categoryStyleOptions[option] ?? [];
+                      const hasStyles = styleOptions.length > 0;
                       const isActive = category === option;
+                      const isOpen = openCategoryMenu === option;
 
                       return (
                         <div key={option} className="relative">
@@ -271,11 +289,11 @@ export default function UploadPage() {
                             disabled={isProcessing || isDone}
                             onClick={() => {
                               setCategory(option);
-                              if (isTops) {
-                                setIsTopsMenuOpen((isOpen) => !isOpen);
+                              if (hasStyles) {
+                                setOpenCategoryMenu((currentOpen) => currentOpen === option ? null : option);
                               } else {
-                                setTopStyle("");
-                                setIsTopsMenuOpen(false);
+                                setCategoryStyle("");
+                                setOpenCategoryMenu(null);
                               }
                             }}
                             className={`min-h-11 w-full rounded-nebula-inner border px-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${
@@ -284,29 +302,29 @@ export default function UploadPage() {
                                 : "bg-black/5 text-nebula-on-surface/60 border-black/5 hover:border-nebula-secondary/40 hover:text-nebula-secondary"
                             }`}
                           >
-                            <span>{isTops && topStyle ? topStyle : option}</span>
-                            {isTops && (
+                            <span>{isActive && categoryStyle ? categoryStyle : option}</span>
+                            {hasStyles && (
                               <ChevronDown
                                 size={16}
-                                className={`shrink-0 transition-transform ${isTopsMenuOpen ? "rotate-180" : ""}`}
+                                className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
                               />
                             )}
                           </button>
 
-                          {isTops && isTopsMenuOpen && (
+                          {hasStyles && isOpen && (
                             <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 rounded-nebula-inner border border-black/5 bg-nebula-surface shadow-2xl shadow-black/20 p-2 space-y-1">
-                              {topStyleOptions.map((styleOption) => (
+                              {styleOptions.map((styleOption) => (
                                 <button
                                   key={styleOption}
                                   type="button"
                                   disabled={isProcessing || isDone}
                                   onClick={() => {
-                                    setCategory("Tops");
-                                    setTopStyle(styleOption);
-                                    setIsTopsMenuOpen(false);
+                                    setCategory(option);
+                                    setCategoryStyle(styleOption);
+                                    setOpenCategoryMenu(null);
                                   }}
                                   className={`w-full rounded-nebula-inner px-3 py-3 text-left text-xs font-bold transition-all disabled:opacity-50 ${
-                                    topStyle === styleOption
+                                    categoryStyle === styleOption
                                       ? "bg-nebula-primary text-nebula-bg"
                                       : "text-nebula-on-surface/60 hover:bg-black/5 hover:text-nebula-primary"
                                   }`}
