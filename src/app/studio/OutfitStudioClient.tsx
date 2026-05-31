@@ -287,7 +287,7 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
          {/* Canvas Slots */}
          <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-start p-10 pt-24 space-y-6 relative scrollbar-hide">
             {/* Top Slot */}
-            <div className={`w-48 h-52 rounded-nebula border-2 border-dashed flex flex-col items-center justify-center transition-all relative overflow-hidden ${top ? "border-nebula-secondary bg-black/5 scale-102" : "border-black/10 bg-transparent hover:border-nebula-secondary/40"}`}>
+            <div className={`w-48 h-52 flex-shrink-0 rounded-nebula border-2 border-dashed flex flex-col items-center justify-center transition-all relative overflow-hidden ${top ? "border-nebula-secondary bg-black/5 scale-102" : "border-black/10 bg-transparent hover:border-nebula-secondary/40"}`}>
               {top ? (
                 <div className="relative group w-full h-full flex flex-col items-center justify-center p-4">
                   {top.imagePath && (
@@ -320,7 +320,7 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
             </div>
 
             {/* Bottom Slot */}
-            <div className={`w-48 h-56 rounded-nebula border-2 border-dashed flex flex-col items-center justify-center transition-all relative overflow-hidden ${bottom ? "border-nebula-primary bg-black/5 scale-102" : "border-black/10 bg-transparent hover:border-nebula-primary/40"}`}>
+            <div className={`w-48 h-56 flex-shrink-0 rounded-nebula border-2 border-dashed flex flex-col items-center justify-center transition-all relative overflow-hidden ${bottom ? "border-nebula-primary bg-black/5 scale-102" : "border-black/10 bg-transparent hover:border-nebula-primary/40"}`}>
               {bottom ? (
                 <div className="relative group w-full h-full flex flex-col items-center justify-center p-4">
                   {bottom.imagePath && (
@@ -353,7 +353,7 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
             </div>
 
             {/* Footwear Slot */}
-            <div className={`w-40 h-32 rounded-nebula border-2 border-dashed flex flex-col items-center justify-center transition-all relative overflow-hidden ${shoes ? "border-nebula-tertiary bg-black/5 scale-102" : "border-black/10 bg-transparent hover:border-nebula-tertiary/40"}`}>
+            <div className={`w-40 h-32 flex-shrink-0 rounded-nebula border-2 border-dashed flex flex-col items-center justify-center transition-all relative overflow-hidden ${shoes ? "border-nebula-tertiary bg-black/5 scale-102" : "border-black/10 bg-transparent hover:border-nebula-tertiary/40"}`}>
               {shoes ? (
                 <div className="relative group w-full h-full flex flex-col items-center justify-center p-3">
                   {shoes.imagePath && (
@@ -386,7 +386,7 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
             </div>
 
             {/* Accessories Slot */}
-            <div className={`w-40 h-32 rounded-nebula border-2 border-dashed flex flex-col items-center justify-center transition-all relative overflow-hidden ${accessories ? "border-nebula-secondary bg-black/5 scale-102" : "border-black/10 bg-transparent hover:border-nebula-secondary/40"}`}>
+            <div className={`w-40 h-32 flex-shrink-0 rounded-nebula border-2 border-dashed flex flex-col items-center justify-center transition-all relative overflow-hidden ${accessories ? "border-nebula-secondary bg-black/5 scale-102" : "border-black/10 bg-transparent hover:border-nebula-secondary/40"}`}>
               {accessories ? (
                 <div className="relative group w-full h-full flex flex-col items-center justify-center p-3">
                   {accessories.imagePath && (
