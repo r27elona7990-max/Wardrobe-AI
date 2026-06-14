@@ -1,12 +1,13 @@
 import FilterSidebar from "@/components/FilterSidebar";
 import DeleteButton from "@/components/DeleteButton";
-import { Plus, SlidersHorizontal, Search, Trash2 } from "lucide-react";
+import { Plus, SlidersHorizontal, Search } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import type { Prisma } from "@prisma/client";
 
 interface ClosetPageProps {
   searchParams: Promise<{
@@ -32,7 +33,7 @@ export default async function ClosetPage({ searchParams }: ClosetPageProps) {
   const userId = (session.user as { id: string }).id;
 
   // Build the Prisma filters
-  const where: any = {
+  const where: Prisma.ClothingItemWhereInput = {
     userId,
   };
 
@@ -40,7 +41,7 @@ export default async function ClosetPage({ searchParams }: ClosetPageProps) {
     where.category = category;
   }
 
-  const andConditions: any[] = [];
+  const andConditions: Prisma.ClothingItemWhereInput[] = [];
 
   if (q) {
     andConditions.push({
@@ -68,7 +69,7 @@ export default async function ClosetPage({ searchParams }: ClosetPageProps) {
   }
 
   // Load items from database
-  const items: any[] = await prisma.clothingItem.findMany({
+  const items = await prisma.clothingItem.findMany({
     where,
     orderBy: { createdAt: "desc" },
   });
@@ -168,7 +169,7 @@ export default async function ClosetPage({ searchParams }: ClosetPageProps) {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-            {items.map((item: any) => (
+            {items.map((item) => (
               <div key={item.id} className="group cursor-pointer">
                 <div className="aspect-[3/4] rounded-nebula glass overflow-hidden relative border border-black/5 group-hover:border-nebula-primary/30 transition-all">
                   {/* Background pastel glow */}

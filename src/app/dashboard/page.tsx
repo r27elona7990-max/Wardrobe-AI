@@ -9,6 +9,7 @@ import PackingListGenerator from "@/components/PackingListGenerator";
 import SavedFits from "@/components/SavedFits";
 import WardrobeStatsPanel from "@/components/WardrobeStatsPanel";
 import { clothingCategories } from "@/lib/clothingCategories";
+import type { ClothingItem } from "@prisma/client";
 
 export default async function Dashboard() {
   const session = await getServerSession(authOptions);
@@ -56,9 +57,9 @@ export default async function Dashboard() {
 
   // Calculate most common tag / color
   const tagCounts: Record<string, number> = {};
-  allItems.forEach((item: any) => {
+  allItems.forEach((item) => {
     if (item.tags) {
-      item.tags.split(",").forEach((tag: any) => {
+      item.tags.split(",").forEach((tag) => {
         const trimmed = tag.trim();
         if (trimmed) {
           tagCounts[trimmed] = (tagCounts[trimmed] || 0) + 1;
@@ -87,7 +88,7 @@ export default async function Dashboard() {
     orderBy: { createdAt: "desc" },
   });
 
-  let outfitItems: any[] = [];
+  let outfitItems: ClothingItem[] = [];
   if (latestOutfit) {
     const ids = latestOutfit.itemIds.split(",");
     const dbItems = await prisma.clothingItem.findMany({
@@ -129,7 +130,7 @@ export default async function Dashboard() {
             <>
               {/* Grid of the 3 pieces forming the outfit */}
               <div className="absolute inset-0 grid grid-cols-3 p-4 gap-4 bg-black/10">
-                {outfitItems.map((item, idx) => (
+                {outfitItems.map((item) => (
                   <div key={item.id} className="relative h-full w-full rounded-nebula-inner overflow-hidden border border-white/10 shadow-lg">
                     <div className={`absolute inset-0 ${getPlaceholderClass(item.category)}`} />
                     {item.imagePath && (
@@ -246,7 +247,7 @@ export default async function Dashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            {recentItems.map((item: any) => (
+            {recentItems.map((item) => (
               <Link href="/closet" key={item.id} className="group cursor-pointer space-y-3 block">
                 <div className="aspect-[3/4] rounded-nebula bg-black/5 overflow-hidden relative border border-black/5 group-hover:border-nebula-primary/30 transition-all">
                   <div className={`absolute inset-4 rounded-nebula-inner ${getPlaceholderClass(item.category)} filter blur-sm group-hover:scale-110 transition-transform duration-500`} />
