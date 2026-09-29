@@ -10,12 +10,12 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
+  id            String               @id @default(cuid())
+  email         String               @unique
   password      String
   name          String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
   clothingItems ClothingItem[]
   outfits       Outfit[]
   resetTokens   PasswordResetToken[]
@@ -31,21 +31,45 @@ model PasswordResetToken {
 }
 
 model ClothingItem {
-  id        String   @id @default(cuid())
-  name      String
-  imagePath String
-  category  String   // e.g., "Top", "Bottom", "Shoes"
-  tags      String?  // Comma separated tags
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
+  id          String       @id @default(cuid())
+  name        String
+  imagePath   String
+  category    String
+  tags        String?
+  colors      String[]     @default([])
+  styles      String[]     @default([])
+  fits        String[]     @default([])
+  aesthetics  String[]     @default([])
+  seasons     String[]     @default([])
+  materials   String[]     @default([])
+  aiMetadata  Json?
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outfitItems OutfitItem[]
+  createdAt   DateTime     @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model Outfit {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   name      String
-  itemIds   String   // Comma separated ClothingItem IDs
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     OutfitItem[]
+  createdAt DateTime     @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model OutfitItem {
+  outfitId       String
+  clothingItemId String
+  position       Int
+  outfit         Outfit       @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  clothingItem   ClothingItem @relation(fields: [clothingItemId], references: [id], onDelete: Cascade)
+
+  @@id([outfitId, clothingItemId])
+  @@unique([outfitId, position])
+  @@index([clothingItemId])
 }

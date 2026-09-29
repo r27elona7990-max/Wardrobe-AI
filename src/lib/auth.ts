@@ -2,6 +2,13 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
+import { enforceRateLimit } from "@/lib/rateLimit";
+
+const credentialsSchema = z.object({
+  email: z.string().trim().email().max(254).transform((value) => value.toLowerCase()),
+  password: z.string().min(8).max(72),
+});
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -13,24 +20,34 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Missing email or password");
+        const parsedCredentials = credentialsSchema.safeParse(credentials);
+
+        if (!parsedCredentials.success) {
+          throw new Error("Invalid email or password");
         }
 
-        const email = credentials.email.trim().toLowerCase();
+        const { email, password } = parsedCredentials.data;
+        const rateLimit = await enforceRateLimit("login", email, {
+          limit: 8,
+          windowMs: 15 * 60 * 1000,
+        });
+
+        if (!rateLimit.allowed) {
+          throw new Error("Too many login attempts. Try again later.");
+        }
 
         const user = await prisma.user.findUnique({
           where: { email }
         });
 
         if (!user || !user.password) {
-          throw new Error("No user found with this email");
+          throw new Error("Invalid email or password");
         }
 
-        const isValid = await bcrypt.compare(credentials.password, user.password);
+        const isValid = await bcrypt.compare(password, user.password);
 
         if (!isValid) {
-          throw new Error("Invalid password");
+          throw new Error("Invalid email or password");
         }
 
         return {

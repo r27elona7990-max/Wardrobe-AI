@@ -1,7 +1,6 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { clothingCategories } from "@/lib/clothingCategories";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -14,6 +13,19 @@ export async function GET() {
   const latestOutfit = await prisma.outfit.findFirst({
     where: { userId },
     orderBy: { createdAt: "desc" },
+    include: {
+      items: {
+        orderBy: { position: "asc" },
+        include: {
+          clothingItem: {
+            select: {
+              name: true,
+              category: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!latestOutfit) {
@@ -23,27 +35,8 @@ export async function GET() {
     });
   }
 
-  const itemIds = latestOutfit.itemIds.split(",").filter(Boolean);
-  const items = await prisma.clothingItem.findMany({
-    where: {
-      id: { in: itemIds },
-      userId,
-    },
-    select: {
-      name: true,
-      category: true,
-    },
-  });
-
-  const categoryOrder = clothingCategories;
-  const itemNames = items
-    .sort((a, b) => {
-      const indexA = categoryOrder.indexOf(a.category);
-      const indexB = categoryOrder.indexOf(b.category);
-
-      return (indexA > -1 ? indexA : 99) - (indexB > -1 ? indexB : 99);
-    })
-    .map((item) => item.name)
+  const itemNames = latestOutfit.items
+    .map((item) => item.clothingItem.name)
     .join(", ");
 
   return Response.json({

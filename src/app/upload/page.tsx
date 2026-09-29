@@ -2,14 +2,17 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useDropzone } from "react-dropzone";
-import { uploadClothingItem } from "@/app/actions/upload";
+import {
+  analyzeClothingUpload,
+  uploadClothingItem,
+} from "@/app/actions/upload";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { 
-  CloudUpload, 
-  X, 
-  Sparkles, 
-  CheckCircle2, 
+import {
+  CloudUpload,
+  X,
+  Sparkles,
+  CheckCircle2,
   Loader2,
   Image as ImageIcon,
   ChevronDown
@@ -26,19 +29,19 @@ const topStyleOptions = [
 ];
 
 const categoryStyleOptions: Partial<Record<string, string[]>> = {
-  Tops: topStyleOptions,
-  Shirts: ["Formal Shirts", "Casual Shirts", "Oversized Shirts", "Printed Shirts"],
-  "T-Shirts": ["Basic Tees", "Graphic Tees", "Oversized Tees", "Fitted Tees"],
-  Bottoms: ["Jeans", "Trousers", "Shorts", "Cargo Pants", "Leggings"],
-  Dresses: ["Casual Dresses", "Party Dresses", "Bodycon Dresses", "Maxi Dresses"],
-  Skirts: ["Mini Skirts", "Midi Skirts", "Denim Skirts", "Pleated Skirts"],
-  Shoes: ["Sneakers", "Flats", "Loafers", "Sandals"],
-  Heels: ["Block Heels", "Stilettos", "Platform Heels", "Kitten Heels"],
-  Boots: ["Ankle Boots", "Knee-High Boots", "Combat Boots", "Chelsea Boots"],
-  Formal: ["Office Wear", "Blazers", "Formal Sets", "Smart Casual"],
-  Sports: ["Gym Wear", "Athleisure", "Tracksuits", "Sports Shoes"],
-  Casual: ["Everyday Basics", "Streetwear", "Lounge Fits", "Weekend Fits"],
-  Accessories: ["Bags", "Belts", "Jewelry", "Hats"],
+  Tops: [...topStyleOptions, "Sweaters", "Cardigans", "Hoodies", "Sweatshirts", "Thermal Tops"],
+  Shirts: ["Formal Shirts", "Casual Shirts", "Oversized Shirts", "Printed Shirts", "Flannel Shirts", "Thermal Shirts"],
+  "T-Shirts": ["Basic Tees", "Graphic Tees", "Oversized Tees", "Fitted Tees", "Sweatshirts", "Hoodies", "Long-Sleeve Tees", "Thermal Tees"],
+  Bottoms: ["Jeans", "Trousers", "Shorts", "Cargo Pants", "Leggings", "Fleece-Lined Trousers", "Thermal Leggings"],
+  Dresses: ["Casual Dresses", "Party Dresses", "Bodycon Dresses", "Maxi Dresses", "Sweater Dresses", "Long-Sleeve Dresses", "Layering Dresses"],
+  Skirts: ["Mini Skirts", "Midi Skirts", "Denim Skirts", "Pleated Skirts", "Wool Skirts", "Knit Skirts", "Layering Skirts"],
+  Shoes: ["Sneakers", "Flats", "Loafers", "Sandals", "Winter Sneakers", "Insulated Shoes", "Waterproof Shoes"],
+  Heels: ["Block Heels", "Stilettos", "Platform Heels", "Kitten Heels", "Closed-Toe Heels", "Ankle-Boot Heels"],
+  Boots: ["Ankle Boots", "Knee-High Boots", "Combat Boots", "Chelsea Boots", "Insulated Boots", "Waterproof Boots", "Lined Boots"],
+  Formal: ["Office Wear", "Blazers", "Formal Sets", "Smart Casual", "Wool Blazers", "Layering Knits", "Tailored Coats"],
+  Sports: ["Gym Wear", "Athleisure", "Tracksuits", "Sports Shoes", "Thermal Base Layers", "Fleece Layers", "Running Jackets"],
+  Casual: ["Everyday Basics", "Streetwear", "Lounge Fits", "Weekend Fits", "Sweaters", "Hoodies", "Fleece Layers", "Thermal Layers"],
+  Accessories: ["Bags", "Belts", "Jewelry", "Hats", "Beanies", "Scarves", "Gloves", "Earmuffs"],
 };
 
 export default function UploadPage() {
@@ -48,23 +51,79 @@ export default function UploadPage() {
   const [categoryStyle, setCategoryStyle] = useState("");
   const [openCategoryMenu, setOpenCategoryMenu] = useState<string | null>(null);
   const [tags, setTags] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<
+    Awaited<ReturnType<typeof analyzeClothingUpload>>["analysis"] | null
+  >(null);
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDone, setIsDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const categoryMenuRef = useRef<HTMLDivElement>(null);
-  
+
   const router = useRouter();
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0];
+
     setFile(selectedFile);
     setPreview(URL.createObjectURL(selectedFile));
     setError(null);
+    setAiAnalysis(null);
+    setIsAnalyzing(true);
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    const result = await analyzeClothingUpload(formData);
+
+    if (result.error || !result.analysis) {
+      setError(result.error ?? "The image could not be analyzed.");
+      setIsAnalyzing(false);
+      setAiAnalysis(null);
+      return;
+    }
+
+    const analysis = result.analysis;
+    setAiAnalysis(analysis);
+
+    const generatedTags = [
+      ...analysis.colors,
+      ...analysis.styles,
+      ...analysis.fits,
+      ...analysis.aesthetics,
+      ...analysis.seasons,
+      ...analysis.materials,
+    ];
+
+    setCategory(analysis.category);
+    setCategoryStyle("");
+
+    setTags((currentTags) => {
+      const allTags = [
+        ...currentTags.split(","),
+        ...generatedTags,
+      ]
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+
+      return Array.from(
+        new Map(
+          allTags.map((tag) => [tag.toLowerCase(), tag])
+        ).values()
+      ).join(", ");
+    });
+
+    setIsAnalyzing(false);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { "image/*": [] },
+    accept: {
+      "image/jpeg": [".jpg", ".jpeg"],
+      "image/png": [".png"],
+      "image/webp": [".webp"],
+    },
     multiple: false
   });
 
@@ -167,14 +226,14 @@ export default function UploadPage() {
     if (!file) return;
 
     setIsProcessing(true);
-    
+
     const formData = new FormData(event.currentTarget);
     formData.append("file", file);
     formData.set("name", categoryStyle || category);
     formData.set("tags", getTagsWithTopStyle());
-
-    // Simulate "AI Background Removal" delay
-    await new Promise(r => setTimeout(r, 2000));
+    if (aiAnalysis) {
+      formData.set("aiAnalysis", JSON.stringify(aiAnalysis));
+    }
 
     const result = await uploadClothingItem(formData);
 
@@ -193,6 +252,8 @@ export default function UploadPage() {
   const removeFile = () => {
     setFile(null);
     setPreview(null);
+    setAiAnalysis(null);
+    setIsAnalyzing(false);
     setIsDone(false);
   };
 
@@ -209,13 +270,12 @@ export default function UploadPage() {
         {/* Left: Dropzone / Preview */}
         <div className="space-y-6">
           {!preview ? (
-            <div 
-              {...getRootProps()} 
-              className={`aspect-square rounded-nebula border-2 border-dashed flex flex-col items-center justify-center gap-6 p-10 transition-all cursor-pointer group ${
-                isDragActive 
-                  ? "border-nebula-primary bg-nebula-primary/5 scale-95" 
-                  : "border-black/10 glass hover:border-nebula-primary/30 hover:bg-black/5"
-              }`}
+            <div
+              {...getRootProps()}
+              className={`aspect-square rounded-nebula border-2 border-dashed flex flex-col items-center justify-center gap-6 p-10 transition-all cursor-pointer group ${isDragActive
+                ? "border-nebula-primary bg-nebula-primary/5 scale-95"
+                : "border-black/10 glass hover:border-nebula-primary/30 hover:bg-black/5"
+                }`}
             >
               <input {...getInputProps()} />
               <div className="w-20 h-20 rounded-full bg-nebula-primary/10 flex items-center justify-center text-nebula-primary group-hover:scale-110 transition-transform">
@@ -228,21 +288,24 @@ export default function UploadPage() {
             </div>
           ) : (
             <div className="relative aspect-square rounded-nebula overflow-hidden glass group shadow-2xl shadow-nebula-primary/5">
-              <Image 
-                src={preview} 
-                alt="Preview" 
+              <Image
+                src={preview}
+                alt="Preview"
                 fill
                 unoptimized
-                className={`object-cover transition-all duration-700 ${isProcessing ? "blur-md scale-105 opacity-50" : ""}`} 
+                className={`object-cover transition-all duration-700 ${isProcessing || isAnalyzing
+                  ? "blur-md scale-105 opacity-50"
+                  : ""
+                  }`}
               />
-              
-              {isProcessing && (
+
+              {(isAnalyzing || isProcessing) && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-nebula-primary bg-nebula-bg/40 backdrop-blur-sm z-20">
                   <div className="relative w-16 h-16">
                     <Loader2 className="animate-spin absolute inset-0" size={64} />
                     <Sparkles className="absolute inset-0 m-auto animate-pulse" size={24} />
                   </div>
-                  <p className="text-xs font-black uppercase tracking-widest animate-pulse">Removing Background...</p>
+                  <p className="text-xs font-black uppercase tracking-widest animate-pulse">{isAnalyzing ? "Analyzing clothing..." : "Saving to closet..."}</p>
                 </div>
               )}
 
@@ -253,7 +316,7 @@ export default function UploadPage() {
                 </div>
               )}
 
-              <button 
+              <button
                 onClick={removeFile}
                 className="absolute top-4 right-4 p-2 bg-black/50 text-nebula-on-surface rounded-full hover:bg-black/70 transition-colors z-40 backdrop-blur-md"
               >
@@ -265,136 +328,134 @@ export default function UploadPage() {
 
         {/* Right: Form */}
         <div className="glass p-8 rounded-nebula border border-black/5 space-y-8">
-           <form onSubmit={handleUpload} className="space-y-6">
-              {error && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-nebula-inner text-red-500 text-xs font-bold uppercase tracking-widest">
-                  {error}
-                </div>
-              )}
+          <form onSubmit={handleUpload} className="space-y-6">
+            {error && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-nebula-inner text-red-500 text-xs font-bold uppercase tracking-widest">
+                {error}
+              </div>
+            )}
 
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-nebula-on-surface/30 ml-1">Category</label>
-                  <input
-                    type="hidden"
-                    name="category"
-                    value={category}
-                  />
-                  <div ref={categoryMenuRef} className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {clothingCategories.map((option) => {
-                      const styleOptions = categoryStyleOptions[option] ?? [];
-                      const hasStyles = styleOptions.length > 0;
-                      const isActive = category === option;
-                      const isOpen = openCategoryMenu === option;
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-nebula-on-surface/30 ml-1">Category</label>
+                <input
+                  type="hidden"
+                  name="category"
+                  value={category}
+                />
+                <div ref={categoryMenuRef} className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {clothingCategories.map((option) => {
+                    const styleOptions = categoryStyleOptions[option] ?? [];
+                    const hasStyles = styleOptions.length > 0;
+                    const isActive = category === option;
+                    const isOpen = openCategoryMenu === option;
 
-                      return (
-                        <div key={option} className="relative">
-                          <button
-                            type="button"
-                            disabled={isProcessing || isDone}
-                            onClick={() => {
-                              setCategory(option);
-                              if (hasStyles) {
-                                setOpenCategoryMenu((currentOpen) => currentOpen === option ? null : option);
-                              } else {
-                                setCategoryStyle("");
-                                setOpenCategoryMenu(null);
-                              }
-                            }}
-                            className={`min-h-11 w-full rounded-nebula-inner border px-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${
-                              isActive
-                                ? "bg-nebula-secondary text-nebula-bg border-nebula-secondary shadow-lg shadow-nebula-secondary/15"
-                                : "bg-black/5 text-nebula-on-surface/60 border-black/5 hover:border-nebula-secondary/40 hover:text-nebula-secondary"
+                    return (
+                      <div key={option} className="relative">
+                        <button
+                          type="button"
+                          disabled={isProcessing || isDone}
+                          onClick={() => {
+                            setCategory(option);
+                            if (hasStyles) {
+                              setOpenCategoryMenu((currentOpen) => currentOpen === option ? null : option);
+                            } else {
+                              setCategoryStyle("");
+                              setOpenCategoryMenu(null);
+                            }
+                          }}
+                          className={`min-h-11 w-full rounded-nebula-inner border px-3 text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${isActive
+                            ? "bg-nebula-secondary text-nebula-bg border-nebula-secondary shadow-lg shadow-nebula-secondary/15"
+                            : "bg-black/5 text-nebula-on-surface/60 border-black/5 hover:border-nebula-secondary/40 hover:text-nebula-secondary"
                             }`}
-                          >
-                            <span>{isActive && categoryStyle ? categoryStyle : option}</span>
-                            {hasStyles && (
-                              <ChevronDown
-                                size={16}
-                                className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
-                              />
-                            )}
-                          </button>
-
-                          {hasStyles && isOpen && (
-                            <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 rounded-nebula-inner border border-black/5 bg-nebula-surface shadow-2xl shadow-black/20 p-2 space-y-1">
-                              {styleOptions.map((styleOption) => (
-                                <button
-                                  key={styleOption}
-                                  type="button"
-                                  disabled={isProcessing || isDone}
-                                  onClick={() => {
-                                    setCategory(option);
-                                    setCategoryStyle(styleOption);
-                                    setOpenCategoryMenu(null);
-                                  }}
-                                  className={`w-full rounded-nebula-inner px-3 py-3 text-left text-xs font-bold transition-all disabled:opacity-50 ${
-                                    categoryStyle === styleOption
-                                      ? "bg-nebula-primary text-nebula-bg"
-                                      : "text-nebula-on-surface/60 hover:bg-black/5 hover:text-nebula-primary"
-                                  }`}
-                                >
-                                  {styleOption}
-                                </button>
-                              ))}
-                            </div>
+                        >
+                          <span>{isActive && categoryStyle ? categoryStyle : option}</span>
+                          {hasStyles && (
+                            <ChevronDown
+                              size={16}
+                              className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                            />
                           )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                        </button>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-nebula-on-surface/30 ml-1">Vibe / Tags</label>
-                  <input 
-                    name="tags"
-                    disabled={isProcessing || isDone}
-                    type="text" 
-                    value={tags}
-                    onChange={(event) => setTags(event.target.value)}
-                    placeholder="e.g. Streetwear, Y2K, Summer"
-                    className="w-full bg-black/5 border border-black/5 rounded-nebula-inner px-4 py-3 outline-none focus:border-nebula-primary/50 focus:bg-black/10 transition-all text-sm disabled:opacity-50"
-                  />
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {suggestedTags.map((tag) => (
-                      <button
-                        key={tag}
-                        type="button"
-                        disabled={isProcessing || isDone}
-                        onClick={() => addSuggestedTag(tag)}
-                        className="px-3 py-1.5 rounded-full bg-nebula-primary/10 border border-nebula-primary/20 text-nebula-primary text-[10px] font-bold uppercase tracking-widest hover:bg-nebula-primary/20 disabled:opacity-50 transition-colors"
-                      >
-                        {tag}
-                      </button>
-                    ))}
-                  </div>
+                        {hasStyles && isOpen && (
+                          <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 rounded-nebula-inner border border-black/5 bg-nebula-surface shadow-2xl shadow-black/20 p-2 space-y-1">
+                            {styleOptions.map((styleOption) => (
+                              <button
+                                key={styleOption}
+                                type="button"
+                                disabled={isProcessing || isDone}
+                                onClick={() => {
+                                  setCategory(option);
+                                  setCategoryStyle(styleOption);
+                                  setOpenCategoryMenu(null);
+                                }}
+                                className={`w-full rounded-nebula-inner px-3 py-3 text-left text-xs font-bold transition-all disabled:opacity-50 ${categoryStyle === styleOption
+                                  ? "bg-nebula-primary text-nebula-bg"
+                                  : "text-nebula-on-surface/60 hover:bg-black/5 hover:text-nebula-primary"
+                                  }`}
+                              >
+                                {styleOption}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
-              <button 
-                disabled={!file || isProcessing || isDone}
-                type="submit" 
-                className="w-full py-4 bg-nebula-primary text-nebula-bg font-black rounded-full flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-nebula-primary/20 disabled:opacity-50 disabled:cursor-not-allowed group"
-              >
-                {isProcessing ? <Loader2 size={24} className="animate-spin" /> : (
-                  <>
-                    <Sparkles size={18} className="group-hover:rotate-12 transition-transform" />
-                    <span className="uppercase tracking-widest text-xs">Process & Save</span>
-                  </>
-                )}
-              </button>
-           </form>
-           
-           <div className="p-4 bg-nebula-secondary/5 rounded-nebula-inner border border-nebula-secondary/10 flex gap-4">
-              <div className="p-2 h-fit rounded-full bg-nebula-secondary/20 text-nebula-secondary">
-                 <ImageIcon size={16} />
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-nebula-on-surface/30 ml-1">Vibe / Tags</label>
+                <input
+                  name="tags"
+                  disabled={isProcessing || isDone}
+                  type="text"
+                  value={tags}
+                  onChange={(event) => setTags(event.target.value)}
+                  placeholder="e.g. Streetwear, Y2K, Summer"
+                  className="w-full bg-black/5 border border-black/5 rounded-nebula-inner px-4 py-3 outline-none focus:border-nebula-primary/50 focus:bg-black/10 transition-all text-sm disabled:opacity-50"
+                />
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {suggestedTags.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      disabled={isProcessing || isDone}
+                      onClick={() => addSuggestedTag(tag)}
+                      className="px-3 py-1.5 rounded-full bg-nebula-primary/10 border border-nebula-primary/20 text-nebula-primary text-[10px] font-bold uppercase tracking-widest hover:bg-nebula-primary/20 disabled:opacity-50 transition-colors"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-1">
-                 <p className="text-[10px] font-black text-nebula-secondary uppercase tracking-widest">Quick Tip</p>
-                 <p className="text-[10px] text-nebula-on-surface/40 leading-relaxed font-medium">Use a flat surface or a hanger for the best background removal results. Our AI works best with contrasting colors.</p>
-              </div>
-           </div>
+            </div>
+
+            <button
+              disabled={!file || isProcessing || isDone}
+              type="submit"
+              className="w-full py-4 bg-nebula-primary text-nebula-bg font-black rounded-full flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-nebula-primary/20 disabled:opacity-50 disabled:cursor-not-allowed group"
+            >
+              {isProcessing ? <Loader2 size={24} className="animate-spin" /> : (
+                <>
+                  <Sparkles size={18} className="group-hover:rotate-12 transition-transform" />
+                  <span className="uppercase tracking-widest text-xs">Process & Save</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="p-4 bg-nebula-secondary/5 rounded-nebula-inner border border-nebula-secondary/10 flex gap-4">
+            <div className="p-2 h-fit rounded-full bg-nebula-secondary/20 text-nebula-secondary">
+              <ImageIcon size={16} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] font-black text-nebula-secondary uppercase tracking-widest">Quick Tip</p>
+              <p className="text-[10px] text-nebula-on-surface/40 leading-relaxed font-medium">Use a flat surface or a hanger for the best background removal results. Our AI works best with contrasting colors.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

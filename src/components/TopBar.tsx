@@ -47,14 +47,16 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
       </button>
 
       <div className="flex-1 max-w-xl">
-        <div className="relative group">
+        <form action="/closet" method="GET" className="relative group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-nebula-on-surface/30 group-focus-within:text-nebula-primary transition-colors" size={18} />
-          <input 
-            type="text" 
-            placeholder="Search your drip..." 
+          <input
+            type="search"
+            name="q"
+            aria-label="Search your wardrobe"
+            placeholder="Search your wardrobe..."
             className="w-full bg-nebula-surface/10 border border-black/5 rounded-full py-2 pl-10 pr-4 outline-none focus:border-nebula-primary/50 focus:bg-black/5 transition-all"
           />
-        </div>
+        </form>
       </div>
 
       <div className="flex items-center gap-2 md:gap-4">

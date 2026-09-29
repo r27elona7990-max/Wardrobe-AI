@@ -12,7 +12,10 @@ type OutfitNotification = {
   body: string;
 };
 
-const getTodayKey = () => new Date().toISOString().slice(0, 10);
+const getTodayKey = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+};
 
 const getNextNotificationDelay = () => {
   const now = new Date();
@@ -49,7 +52,15 @@ export default function DailyOutfitBell() {
       return;
     }
 
-    const response = await fetch("/api/daily-outfit");
+    let response: Response;
+
+    try {
+      response = await fetch("/api/daily-outfit");
+    } catch {
+      setStatus("Could not load today's outfit.");
+      return;
+    }
+
     const suggestion = (await response.json()) as OutfitNotification;
 
     if (!response.ok) {
@@ -131,7 +142,7 @@ export default function DailyOutfitBell() {
 
     window.localStorage.setItem(enabledKey, "true");
     setIsEnabled(true);
-    setStatus("Daily outfit reminders are on.");
+    setStatus("Reminders are on while this app is open.");
     await showDailySuggestion(true);
     scheduleDailySuggestion();
   };

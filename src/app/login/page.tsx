@@ -95,6 +95,9 @@ function LoginContent() {
                   required
                   type={showPassword ? "text" : "password"} 
                   placeholder="••••••••"
+                  minLength={8}
+                  maxLength={72}
+                  autoComplete="current-password"
                   className="w-full bg-black/5 border border-black/10 rounded-nebula-inner px-4 py-3 outline-none focus:border-nebula-secondary/50 focus:bg-black/10 transition-all text-sm pr-12"
                 />
                 <button 

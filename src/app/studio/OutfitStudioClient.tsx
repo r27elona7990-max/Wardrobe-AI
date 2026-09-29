@@ -90,13 +90,11 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
   const styleContext = { occasion, weather };
 
   const getBestCandidates = (
-    categoryMatch: (item: DbClothingItem) => boolean,
-    limit = 8
+    categoryMatch: (item: DbClothingItem) => boolean
   ) => {
     return initialItems
       .filter(categoryMatch)
-      .sort((a, b) => scoreItemForStyle(b, styleContext) - scoreItemForStyle(a, styleContext))
-      .slice(0, limit);
+      .sort((a, b) => scoreItemForStyle(b, styleContext) - scoreItemForStyle(a, styleContext));
   };
 
   const buildRankedDrafts = (): SuggestedDraft[] => {
@@ -105,7 +103,7 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
     const shoeOptions = getBestCandidates((item) => isShoesCategory(item.category));
     const accessoryOptions = [
       undefined,
-      ...getBestCandidates((item) => item.category === "Accessories", 5),
+      ...getBestCandidates((item) => item.category === "Accessories"),
     ];
 
     const rankedDrafts: SuggestedDraft[] = [];
@@ -139,8 +137,13 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
       return;
     }
 
-    const suggestionPool = rankedDrafts.slice(0, Math.min(8, rankedDrafts.length));
-    const suggestedDraft = suggestionPool[draftCycle % suggestionPool.length];
+    const currentIds = [top?.id, bottom?.id, shoes?.id, accessories?.id].filter(Boolean).sort().join(":");
+    const distinctDrafts = rankedDrafts.filter((draft) =>
+      [draft.top.id, draft.bottom.id, draft.shoes.id, draft.accessories?.id].filter(Boolean).sort().join(":") !== currentIds
+    );
+    const suggestionPool = distinctDrafts.length > 0 ? distinctDrafts : rankedDrafts;
+    const rotation = draftCycle % Math.min(6, suggestionPool.length);
+    const suggestedDraft = suggestionPool[rotation];
 
     setTop(suggestedDraft.top);
     setBottom(suggestedDraft.bottom);
@@ -474,7 +477,10 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
                  <button
                    key={option}
                    type="button"
-                   onClick={() => setOccasion(option)}
+                   onClick={() => {
+                     setOccasion(option);
+                     setDraftCycle(0);
+                   }}
                    className={`min-h-10 rounded-nebula-inner border px-3 text-xs font-bold transition-all ${
                      occasion === option
                        ? "bg-nebula-primary text-nebula-bg border-nebula-primary"
@@ -494,7 +500,10 @@ export default function OutfitStudioClient({ initialItems }: OutfitStudioClientP
                  <button
                    key={option}
                    type="button"
-                   onClick={() => setWeather(option)}
+                   onClick={() => {
+                     setWeather(option);
+                     setDraftCycle(0);
+                   }}
                    className={`min-h-10 rounded-nebula-inner border px-3 text-xs font-bold transition-all ${
                      weather === option
                        ? "bg-nebula-tertiary text-nebula-bg border-nebula-tertiary"

@@ -3,26 +3,33 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { enforceRateLimit } from "@/lib/rateLimit";
 
 const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-  name: z.string().min(1).optional(),
+  email: z.string().trim().email().max(254).transform((value) => value.toLowerCase()),
+  password: z.string().min(8).max(72),
+  name: z.string().trim().min(1).max(80),
 });
 
 export async function registerUser(formData: FormData) {
-  const email = (formData.get("email") as string).trim().toLowerCase();
-  const password = formData.get("password") as string;
-  const name = formData.get("name") as string;
-
   const validatedFields = registerSchema.safeParse({
-    email,
-    password,
-    name,
+    email: formData.get("email"),
+    password: formData.get("password"),
+    name: formData.get("name"),
   });
 
   if (!validatedFields.success) {
-    return { error: "Invalid input fields." };
+    return { error: "Use a valid email, name, and password of 8–72 characters." };
+  }
+
+  const { email, password, name } = validatedFields.data;
+  const rateLimit = await enforceRateLimit("register", email, {
+    limit: 5,
+    windowMs: 60 * 60 * 1000,
+  });
+
+  if (!rateLimit.allowed) {
+    return { error: "Too many registration attempts. Please try again later." };
   }
 
   try {
@@ -34,8 +41,7 @@ export async function registerUser(formData: FormData) {
       return { error: "User already exists." };
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashed = await bcrypt.hash(password, salt);
+    const hashed = await bcrypt.hash(password, 12);
 
     await prisma.user.create({
       data: {

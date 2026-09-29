@@ -3,6 +3,14 @@
 import { useState } from "react";
 import { Heart, Share2 } from "lucide-react";
 
+const formatSavedFitDate = (value: string) =>
+  new Intl.DateTimeFormat("en-US", {
+    month: "numeric",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(value));
+
 type ClothingItem = {
   id: string;
   name: string;
@@ -12,7 +20,7 @@ type ClothingItem = {
 type SavedOutfit = {
   id: string;
   name: string;
-  itemIds: string;
+  itemIds: string[];
   createdAt: string;
 };
 
@@ -27,7 +35,6 @@ export default function SavedFits({ outfits, items }: SavedFitsProps) {
 
   const getOutfitItems = (outfit: SavedOutfit) =>
     outfit.itemIds
-      .split(",")
       .map((id) => itemById.get(id))
       .filter((item): item is ClothingItem => Boolean(item));
 
@@ -71,7 +78,7 @@ export default function SavedFits({ outfits, items }: SavedFitsProps) {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-nebula-on-surface/30">
-                      {new Date(outfit.createdAt).toLocaleDateString()}
+                      {formatSavedFitDate(outfit.createdAt)}
                     </p>
                     <h3 className="font-black text-nebula-on-surface truncate">{outfit.name}</h3>
                   </div>

@@ -12,7 +12,7 @@ export const clothingCategories = [
   "Sports",
   "Casual",
   "Accessories",
-];
+] as const;
 
 export const isTopCategory = (category: string) =>
   ["Tops", "Shirts", "T-Shirts", "Dresses", "Formal", "Sports", "Casual"].includes(category);

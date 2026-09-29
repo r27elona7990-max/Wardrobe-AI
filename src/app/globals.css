@@ -22,12 +22,14 @@
 
 
 :root {
-  --background: #ffffff;
-  --foreground: #11072a;
-  --nebula-surface: #f8fafc;
+  color-scheme: light;
+  --background: #fdfafb;
+  --foreground: #2d235c;
+  --nebula-surface: #ffffff;
 }
 
 .dark {
+  color-scheme: dark;
   --background: #0f0a1f;
   --foreground: #f4efff;
   --nebula-surface: #1c1433;
@@ -43,7 +45,19 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-lexend);
+  min-height: 100vh;
   @apply antialiased transition-colors duration-300;
+}
+
+input,
+textarea,
+select {
+  color: var(--foreground);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: color-mix(in srgb, var(--foreground) 45%, transparent);
 }
 
 /* Glassmorphism utility */

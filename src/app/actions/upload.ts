@@ -3,20 +3,66 @@
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { mkdir, writeFile } from "fs/promises";
+import crypto from "crypto";
+import { mkdir, unlink, writeFile } from "fs/promises";
 import { join } from "path";
 import { revalidatePath } from "next/cache";
+import {
+  analyzeClothingImage,
+  ClothingAnalysisSchema,
+  type ClothingAnalysis,
+} from "@/lib/ai/analyzeClothingImage";
+import { clothingCategories } from "@/lib/clothingCategories";
+import { validateImageBuffer } from "@/lib/imageValidation";
+import { enforceRateLimit } from "@/lib/rateLimit";
+import { z } from "zod";
 
 const getSafeFilename = (name: string) =>
-  name
+  (name
     .replace(/[^a-zA-Z0-9._-]/g, "-")
     .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/^-|-$/g, "") || "clothing-item")
+    .slice(0, 120);
+
+const clothingItemSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  category: z.enum(clothingCategories),
+  tags: z.string().trim().max(1_000).default(""),
+});
 
 const cleanEnvValue = (value: string | undefined) =>
   value?.trim().replace(/^["']|["']$/g, "");
 
-const uploadToSupabaseStorage = async (file: File, userId: string, buffer: Buffer) => {
+const mergeTags = (
+  currentTags: string,
+  generatedTags: string[]
+) => {
+  const uniqueTags = new Map<string, string>();
+
+  currentTags
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .forEach((tag) =>
+      uniqueTags.set(tag.toLowerCase(), tag)
+    );
+
+  generatedTags
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .forEach((tag) =>
+      uniqueTags.set(tag.toLowerCase(), tag)
+    );
+
+  return Array.from(uniqueTags.values()).join(", ");
+};
+
+const uploadToSupabaseStorage = async (
+  file: File,
+  userId: string,
+  buffer: Buffer,
+  mimeType: string
+) => {
   const supabaseUrl = cleanEnvValue(process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL);
   const serviceRoleKey = cleanEnvValue(process.env.SUPABASE_SERVICE_ROLE_KEY);
   const bucket = cleanEnvValue(process.env.SUPABASE_STORAGE_BUCKET) ?? "clothing-items";
@@ -29,7 +75,7 @@ const uploadToSupabaseStorage = async (file: File, userId: string, buffer: Buffe
     return null;
   }
 
-  const filename = `${Date.now()}-${getSafeFilename(file.name)}`;
+  const filename = `${Date.now()}-${crypto.randomUUID()}-${getSafeFilename(file.name)}`;
   const objectPath = `${userId}/${filename}`;
   const uploadUrl = `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/${bucket}/${objectPath}`;
 
@@ -38,11 +84,11 @@ const uploadToSupabaseStorage = async (file: File, userId: string, buffer: Buffe
     headers: {
       apikey: serviceRoleKey,
       Authorization: `Bearer ${serviceRoleKey}`,
-      "Content-Type": file.type || "application/octet-stream",
+      "Content-Type": mimeType,
       "x-upsert": "false",
     },
     body: new Blob([new Uint8Array(buffer)], {
-      type: file.type || "application/octet-stream",
+      type: mimeType,
     }),
   });
 
@@ -56,7 +102,7 @@ const uploadToSupabaseStorage = async (file: File, userId: string, buffer: Buffe
 };
 
 const uploadToLocalPublicFolder = async (file: File, buffer: Buffer) => {
-  const filename = `${Date.now()}-${getSafeFilename(file.name)}`;
+  const filename = `${Date.now()}-${crypto.randomUUID()}-${getSafeFilename(file.name)}`;
   const uploadDir = join(process.cwd(), "public", "uploads");
   const path = join(uploadDir, filename);
 
@@ -66,6 +112,99 @@ const uploadToLocalPublicFolder = async (file: File, buffer: Buffer) => {
   return `/uploads/${filename}`;
 };
 
+const removeStoredImage = async (imagePath: string) => {
+  const supabaseUrl = cleanEnvValue(
+    process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL
+  )?.replace(/\/$/, "");
+  const serviceRoleKey = cleanEnvValue(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const bucket = cleanEnvValue(process.env.SUPABASE_STORAGE_BUCKET) ?? "clothing-items";
+  const publicPrefix = supabaseUrl
+    ? `${supabaseUrl}/storage/v1/object/public/${bucket}/`
+    : "";
+
+  if (
+    supabaseUrl &&
+    serviceRoleKey &&
+    publicPrefix &&
+    imagePath.startsWith(publicPrefix)
+  ) {
+    const objectPath = imagePath.slice(publicPrefix.length);
+    await fetch(`${supabaseUrl}/storage/v1/object/${bucket}/${objectPath}`, {
+      method: "DELETE",
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+      },
+    });
+    return;
+  }
+
+  if (imagePath.startsWith("/uploads/")) {
+    const localPath = join(process.cwd(), "public", imagePath.slice(1));
+    await unlink(localPath).catch(() => undefined);
+  }
+};
+
+type AnalyzeClothingResult =
+  | {
+      success: true;
+      analysis: ClothingAnalysis;
+      error?: never;
+    }
+  | {
+      success?: never;
+      analysis?: never;
+      error: string;
+    };
+
+export async function analyzeClothingUpload(
+  formData: FormData
+): Promise<AnalyzeClothingResult> {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    return { error: "You must be logged in to analyze items." };
+  }
+
+  const file = formData.get("file");
+
+  if (!(file instanceof File)) {
+    return { error: "Please select an image." };
+  }
+
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const validation = validateImageBuffer(buffer, file.type, file.size);
+
+    if (!validation.valid) {
+      return { error: validation.error };
+    }
+
+    const userId = (session.user as { id: string }).id;
+    const rateLimit = await enforceRateLimit("analyze-clothing", userId, {
+      limit: 15,
+      windowMs: 60 * 60 * 1000,
+    });
+
+    if (!rateLimit.allowed) {
+      return { error: "AI analysis limit reached. Please try again later." };
+    }
+
+    const analysis = await analyzeClothingImage(buffer, validation.type);
+
+    return {
+      success: true,
+      analysis,
+    };
+  } catch (error) {
+    console.error("AI clothing preview failed:", error);
+
+    return {
+      error: "The image could not be analyzed. You can still enter tags manually.",
+    };
+  }
+}
+
 export async function uploadClothingItem(formData: FormData) {
   const session = await getServerSession(authOptions);
 
@@ -73,30 +212,85 @@ export async function uploadClothingItem(formData: FormData) {
     return { error: "You must be logged in to upload items." };
   }
 
-  const name = formData.get("name") as string;
-  const category = formData.get("category") as string;
-  const tags = formData.get("tags") as string;
-  const file = formData.get("file") as File;
+  const parsedItem = clothingItemSchema.safeParse({
+    name: formData.get("name"),
+    category: formData.get("category"),
+    tags: formData.get("tags") ?? "",
+  });
+  const aiAnalysisJson = formData.get("aiAnalysis");
+  const file = formData.get("file");
 
-  if (!file || !name || !category) {
-    return { error: "Missing required fields." };
+  let submittedAnalysis: ClothingAnalysis | null = null;
+
+  if (typeof aiAnalysisJson === "string" && aiAnalysisJson) {
+    try {
+      const parsedAnalysis = ClothingAnalysisSchema.safeParse(
+        JSON.parse(aiAnalysisJson)
+      );
+      submittedAnalysis = parsedAnalysis.success ? parsedAnalysis.data : null;
+    } catch {
+      submittedAnalysis = null;
+    }
   }
 
-  if (!file.type.startsWith("image/")) {
-    return { error: "Please upload an image file." };
+  if (!parsedItem.success || !(file instanceof File)) {
+    return { error: "Enter a valid name, category, tags, and image." };
   }
 
-  if (file.size > 5 * 1024 * 1024) {
-    return { error: "Image must be smaller than 5MB." };
-  }
+  const { name, category, tags } = parsedItem.data;
+  let imagePath: string | null = null;
 
   try {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const userId = (session.user as { id: string }).id;
+    const validation = validateImageBuffer(buffer, file.type, file.size);
 
-    const imagePath =
-      (await uploadToSupabaseStorage(file, userId, buffer)) ??
+    if (!validation.valid) {
+      return { error: validation.error };
+    }
+
+    const userId = (session.user as { id: string }).id;
+    const rateLimit = await enforceRateLimit("upload-clothing", userId, {
+      limit: 30,
+      windowMs: 60 * 60 * 1000,
+    });
+
+    if (!rateLimit.allowed) {
+      return { error: "Upload limit reached. Please try again later." };
+    }
+
+    let finalTags = tags;
+    let finalAnalysis = submittedAnalysis;
+
+    if (!finalAnalysis) {
+      try {
+        finalAnalysis = await analyzeClothingImage(
+          buffer,
+          validation.type
+        );
+      } catch (analysisError) {
+        console.error(
+          "AI clothing analysis failed:",
+          analysisError
+        );
+      }
+    }
+
+    if (finalAnalysis) {
+      const generatedTags = [
+        ...finalAnalysis.colors,
+        ...finalAnalysis.styles,
+        ...finalAnalysis.fits,
+        ...finalAnalysis.aesthetics,
+        ...finalAnalysis.seasons,
+        ...finalAnalysis.materials,
+      ];
+
+      finalTags = mergeTags(tags, generatedTags);
+    }
+
+    imagePath =
+      (await uploadToSupabaseStorage(file, userId, buffer, validation.type)) ??
       (await uploadToLocalPublicFolder(file, buffer));
 
     // Save to database
@@ -104,7 +298,14 @@ export async function uploadClothingItem(formData: FormData) {
       data: {
         name,
         category,
-        tags,
+        tags: finalTags,
+        colors: finalAnalysis?.colors ?? [],
+        styles: finalAnalysis?.styles ?? [],
+        fits: finalAnalysis?.fits ?? [],
+        aesthetics: finalAnalysis?.aesthetics ?? [],
+        seasons: finalAnalysis?.seasons ?? [],
+        materials: finalAnalysis?.materials ?? [],
+        aiMetadata: finalAnalysis ?? undefined,
         imagePath,
         userId,
       },
@@ -113,11 +314,17 @@ export async function uploadClothingItem(formData: FormData) {
     revalidatePath("/closet");
     revalidatePath("/dashboard");
     revalidatePath("/studio");
-    return { success: true, item: newItem };
+    return { success: true, itemId: newItem.id };
   } catch (error) {
+    if (imagePath) {
+      await removeStoredImage(imagePath).catch((cleanupError) => {
+        console.error("Failed to clean up an incomplete upload:", cleanupError);
+      });
+    }
+
     console.error("Upload error:", error);
     return {
-      error: error instanceof Error ? error.message : "Failed to upload item.",
+      error: "Failed to upload item. Please try again.",
     };
   }
 }

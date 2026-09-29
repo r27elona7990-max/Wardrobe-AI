@@ -58,7 +58,7 @@ const deleteSupabaseObjects = async (imagePaths: string[]) => {
 const deleteLocalFiles = async (imagePaths: string[]) => {
   await Promise.all(
     imagePaths
-      .filter((imagePath) => imagePath.startsWith("/"))
+      .filter((imagePath) => imagePath.startsWith("/uploads/"))
       .map(async (imagePath) => {
         const relativePath = imagePath.slice(1);
         const filePath = join(process.cwd(), "public", relativePath);
@@ -107,4 +107,3 @@ export async function deleteVault() {
     return { error: "Failed to delete your vault. Please try again." };
   }
 }
-

@@ -72,6 +72,13 @@ export async function deleteClothingItem(id: string) {
       where: { id },
     });
 
+    await prisma.outfit.deleteMany({
+      where: {
+        userId,
+        items: { none: {} },
+      },
+    });
+
     if (item.imagePath) {
       const deletedCloudFile = await deleteFromSupabaseStorage(item.imagePath);
 
@@ -86,15 +93,14 @@ export async function deleteClothingItem(id: string) {
 
       // Delete local development file from public folder.
       // Remove leading slash if present to join correctly with "public"
-      const relativePath = item.imagePath.startsWith("/") 
-        ? item.imagePath.slice(1) 
-        : item.imagePath;
-      
-      const filePath = join(process.cwd(), "public", relativePath);
-      
-      await unlink(filePath).catch((err) => {
-        console.warn(`[Clothing Action] Failed to delete file at ${filePath}:`, err.message);
-      });
+      if (item.imagePath.startsWith("/uploads/")) {
+        const relativePath = item.imagePath.slice(1);
+        const filePath = join(process.cwd(), "public", relativePath);
+
+        await unlink(filePath).catch((err) => {
+          console.warn(`[Clothing Action] Failed to delete file at ${filePath}:`, err.message);
+        });
+      }
     }
 
     revalidatePath("/closet");

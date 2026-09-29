@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { UserCircle, LogOut, Settings, Bell, Shirt, Shield, Loader2, X } from "lucide-react";
 import { deleteVault } from "@/app/actions/vault";
+import Link from "next/link";
 
 interface ProfileClientProps {
   initialClothingCount: number;
@@ -95,7 +96,7 @@ export default function ProfileClient({
 
       {/* Account Settings Grid */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="glass rounded-nebula p-6 border border-black/5 space-y-6 group hover:border-nebula-primary/20 transition-all cursor-pointer">
+        <div className="glass rounded-nebula p-6 border border-black/5 space-y-6 group hover:border-nebula-primary/20 transition-all">
           <div className="flex items-center gap-4 border-b border-black/5 pb-4">
             <div className="w-12 h-12 bg-black/5 rounded-full flex items-center justify-center text-nebula-on-surface/60 group-hover:text-nebula-primary transition-colors">
               <Settings size={24} />
@@ -105,14 +106,14 @@ export default function ProfileClient({
               <p className="text-sm text-nebula-on-surface/50">Manage your profile and presence</p>
             </div>
           </div>
-          <div className="space-y-4 text-sm font-bold text-nebula-on-surface/70">
-            <p className="hover:text-nebula-primary transition-colors">Edit Profile Information</p>
-            <p className="hover:text-nebula-primary transition-colors">Connected Accounts</p>
-            <p className="hover:text-nebula-primary transition-colors">Export Wardrobe Data</p>
+          <div className="space-y-3 text-sm font-medium text-nebula-on-surface/60">
+            <p>Name: {session?.user?.name || "Not provided"}</p>
+            <p>Email: {session?.user?.email || "Not available"}</p>
+            <p className="text-xs text-nebula-on-surface/40">Profile editing and connected accounts are planned features.</p>
           </div>
         </div>
 
-        <div className="glass rounded-nebula p-6 border border-black/5 space-y-6 group hover:border-nebula-secondary/20 transition-all cursor-pointer">
+        <div className="glass rounded-nebula p-6 border border-black/5 space-y-6 group hover:border-nebula-secondary/20 transition-all">
           <div className="flex items-center gap-4 border-b border-black/5 pb-4">
             <div className="w-12 h-12 bg-black/5 rounded-full flex items-center justify-center text-nebula-on-surface/60 group-hover:text-nebula-secondary transition-colors">
               <Bell size={24} />
@@ -122,23 +123,13 @@ export default function ProfileClient({
               <p className="text-sm text-nebula-on-surface/50">Outfit schedules and alerts</p>
             </div>
           </div>
-          <div className="space-y-4 text-sm font-bold text-nebula-on-surface/70">
-            <div className="flex justify-between items-center">
-              <span>Daily Outfit Recommendations</span>
-              <div className="w-10 h-6 bg-nebula-secondary rounded-full relative">
-                <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full" />
-              </div>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>Weather-based Alterations</span>
-              <div className="w-10 h-6 bg-nebula-secondary rounded-full relative">
-                <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full" />
-              </div>
-            </div>
+          <div className="space-y-3 text-sm font-medium text-nebula-on-surface/60">
+            <p>Use the bell in the top navigation to enable browser reminders.</p>
+            <p className="text-xs text-nebula-on-surface/40">Reminders are scheduled while Wardrobe AI is open in your browser.</p>
           </div>
         </div>
 
-        <div className="glass rounded-nebula p-6 border border-black/5 space-y-6 group hover:border-nebula-tertiary/20 transition-all cursor-pointer flex flex-col justify-between">
+        <div className="glass rounded-nebula p-6 border border-black/5 space-y-6 group hover:border-nebula-tertiary/20 transition-all flex flex-col justify-between">
           <div className="flex items-center gap-4 border-b border-black/5 pb-4">
             <div className="w-12 h-12 bg-black/5 rounded-full flex items-center justify-center text-nebula-on-surface/60 group-hover:text-nebula-tertiary transition-colors">
               <Shirt size={24} />
@@ -148,12 +139,12 @@ export default function ProfileClient({
               <p className="text-sm text-nebula-on-surface/50">Tune the AI to your taste</p>
             </div>
           </div>
-          <button className="w-full py-3 border-2 border-dashed border-black/10 text-nebula-on-surface/50 text-sm font-bold uppercase tracking-widest rounded-nebula-inner hover:border-nebula-tertiary/50 hover:text-nebula-tertiary hover:bg-nebula-tertiary/5 transition-all">
-            Retake Style Quiz
-          </button>
+          <p className="rounded-nebula-inner border border-dashed border-black/10 p-4 text-center text-xs font-bold uppercase tracking-widest text-nebula-on-surface/40">
+            Style quiz — planned
+          </p>
         </div>
 
-        <div className="glass rounded-nebula p-6 border border-black/5 space-y-6 group hover:border-red-400/20 transition-all cursor-pointer">
+        <div className="glass rounded-nebula p-6 border border-black/5 space-y-6 group hover:border-red-400/20 transition-all">
           <div className="flex items-center gap-4 border-b border-black/5 pb-4">
             <div className="w-12 h-12 bg-black/5 rounded-full flex items-center justify-center text-nebula-on-surface/60 group-hover:text-red-400 transition-colors">
               <Shield size={24} />
@@ -164,7 +155,9 @@ export default function ProfileClient({
             </div>
           </div>
           <div className="space-y-4 text-sm font-bold text-nebula-on-surface/70">
-            <p className="hover:text-red-400 transition-colors">Change Encryption Key</p>
+            <Link href="/forgot-password" className="block hover:text-nebula-primary transition-colors">
+              Change password
+            </Link>
             <button
               type="button"
               onClick={() => {

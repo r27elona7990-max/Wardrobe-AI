@@ -8,8 +8,6 @@ import Link from "next/link";
 import PackingListGenerator from "@/components/PackingListGenerator";
 import SavedFits from "@/components/SavedFits";
 import WardrobeStatsPanel from "@/components/WardrobeStatsPanel";
-import { clothingCategories } from "@/lib/clothingCategories";
-import type { ClothingItem } from "@prisma/client";
 
 export default async function Dashboard() {
   const session = await getServerSession(authOptions);
@@ -46,12 +44,18 @@ export default async function Dashboard() {
     where: { userId },
     orderBy: { createdAt: "desc" },
     take: 6,
+    include: {
+      items: {
+        orderBy: { position: "asc" },
+        select: { clothingItemId: true },
+      },
+    },
   });
 
   const savedOutfitCards = savedOutfits.map((outfit) => ({
     id: outfit.id,
     name: outfit.name,
-    itemIds: outfit.itemIds,
+    itemIds: outfit.items.map((item) => item.clothingItemId),
     createdAt: outfit.createdAt.toISOString(),
   }));
 
@@ -86,23 +90,16 @@ export default async function Dashboard() {
   const latestOutfit = await prisma.outfit.findFirst({
     where: { userId },
     orderBy: { createdAt: "desc" },
+    include: {
+      items: {
+        orderBy: { position: "asc" },
+        include: { clothingItem: true },
+      },
+    },
   });
 
-  let outfitItems: ClothingItem[] = [];
-  if (latestOutfit) {
-    const ids = latestOutfit.itemIds.split(",");
-    const dbItems = await prisma.clothingItem.findMany({
-      where: { id: { in: ids } },
-    });
-
-    // Sort items to match original order (Top, Bottom, Shoes)
-    const categoryOrder = clothingCategories;
-    outfitItems = dbItems.sort((a, b) => {
-      const idxA = categoryOrder.indexOf(a.category);
-      const idxB = categoryOrder.indexOf(b.category);
-      return (idxA > -1 ? idxA : 99) - (idxB > -1 ? idxB : 99);
-    });
-  }
+  const outfitItems =
+    latestOutfit?.items.map((outfitItem) => outfitItem.clothingItem) ?? [];
 
   const getPlaceholderClass = (itemCategory: string) => {
     switch (itemCategory) {

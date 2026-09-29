@@ -8,13 +8,14 @@ import { KeyRound, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
 export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  const [devResetLink, setDevResetLink] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [resetLink, setResetLink] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError(null);
+    setDevResetLink(null);
 
     const formData = new FormData(event.currentTarget);
     const result = await requestPasswordReset(formData);
@@ -22,10 +23,8 @@ export default function ForgotPasswordPage() {
     if (result.error) {
       setError(result.error);
     } else {
+      setDevResetLink("devResetLink" in result ? result.devResetLink ?? null : null);
       setSuccess(true);
-      if (result.devResetLink) {
-        setResetLink(result.devResetLink);
-      }
     }
     setLoading(false);
   }
@@ -47,8 +46,8 @@ export default function ForgotPasswordPage() {
             </h1>
             <p className="text-sm text-nebula-on-surface/40">
               {success 
-                ? "We've sent a secure reset link to your email." 
-                : "Enter your email base to receive a secure reset link."}
+                ? "If that email is registered, a secure reset link is on its way."
+                : "Enter your email address to receive a secure reset link."}
             </p>
           </div>
         </div>
@@ -63,7 +62,7 @@ export default function ForgotPasswordPage() {
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-nebula-on-surface/40 ml-1">Email Base</label>
+                <label className="text-xs font-bold uppercase tracking-widest text-nebula-on-surface/40 ml-1">Email Address</label>
                 <input 
                   name="email"
                   required
@@ -89,14 +88,16 @@ export default function ForgotPasswordPage() {
           </form>
         ) : (
           <div className="space-y-6">
-            {resetLink && (
-              <div className="p-4 bg-nebula-secondary/10 border border-nebula-secondary/20 rounded-nebula-inner text-nebula-secondary text-sm text-center break-words">
-                <p className="font-bold mb-2 uppercase tracking-widest text-xs">Development Mode Link:</p>
-                <a href={resetLink} className="underline underline-offset-4 hover:text-nebula-primary transition-colors">
-                  {resetLink}
-                </a>
-              </div>
+            {devResetLink && (
+              <Link
+                href={devResetLink}
+                className="w-full py-4 bg-nebula-primary text-nebula-bg font-black rounded-full flex items-center justify-center gap-2 transition-all shadow-lg shadow-nebula-primary/20"
+              >
+                Open Reset Link
+                <ArrowRight size={20} />
+              </Link>
             )}
+
             <Link 
               href="/login"
               className="w-full py-4 bg-black/5 hover:bg-black/10 border border-black/10 text-nebula-on-surface font-black rounded-full flex items-center justify-center gap-2 transition-all"

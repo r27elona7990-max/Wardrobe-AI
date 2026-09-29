@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "prisma migrate deploy && prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.7.0",
@@ -15,8 +17,9 @@
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^3.0.3",
     "lucide-react": "^1.8.0",
-    "next": "16.2.4",
+    "next": "^16.2.9",
     "next-auth": "^4.24.14",
+    "openai": "^6.44.0",
     "pg": "^8.14.1",
     "prisma": "^7.7.0",
     "react": "19.2.4",
@@ -30,8 +33,19 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.4",
+    "eslint-config-next": "^16.2.9",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "@hono/node-server": "1.19.13",
+    "esbuild": "0.28.1",
+    "fast-uri": "3.1.6",
+    "hono": "4.12.25",
+    "postcss": "8.5.26",
+    "next-auth": {
+      "uuid": "11.1.1"
+    }
   }
 }
