@@ -68,3 +68,22 @@ textarea::placeholder {
 .dark .glass {
   @apply bg-white/8 backdrop-blur-xl border-white/10 shadow-black/20;
 }
+
+@media (max-width: 767px) {
+  .glass,
+  .dark .glass {
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

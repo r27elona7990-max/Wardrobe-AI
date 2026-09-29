@@ -3,11 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import PackingListGenerator from "@/components/PackingListGenerator";
 import SavedFits from "@/components/SavedFits";
 import WardrobeStatsPanel from "@/components/WardrobeStatsPanel";
+import WardrobeImage from "@/components/WardrobeImage";
 
 export default async function Dashboard() {
   const session = await getServerSession(authOptions);
@@ -18,39 +18,41 @@ export default async function Dashboard() {
 
   const userId = (session.user as { id: string }).id;
 
-  // Retrieve user metrics
-  const totalDrops = await prisma.clothingItem.count({
-    where: { userId },
-  });
-
-  const totalOutfits = await prisma.outfit.count({
-    where: { userId },
-  });
-
-  // Fetch recent uploads (take 5)
-  const recentItems = await prisma.clothingItem.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-  });
-
-  // Fetch all user items to aggregate tag insights
-  const allItems = await prisma.clothingItem.findMany({
-    where: { userId },
-    select: { id: true, name: true, category: true, tags: true },
-  });
-
-  const savedOutfits = await prisma.outfit.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    take: 6,
-    include: {
-      items: {
-        orderBy: { position: "asc" },
-        select: { clothingItemId: true },
-      },
-    },
-  });
+  const [totalDrops, totalOutfits, recentItems, allItems, savedOutfits, latestOutfit] =
+    await Promise.all([
+      prisma.clothingItem.count({ where: { userId } }),
+      prisma.outfit.count({ where: { userId } }),
+      prisma.clothingItem.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      }),
+      prisma.clothingItem.findMany({
+        where: { userId },
+        select: { id: true, name: true, category: true, tags: true },
+      }),
+      prisma.outfit.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 6,
+        include: {
+          items: {
+            orderBy: { position: "asc" },
+            select: { clothingItemId: true },
+          },
+        },
+      }),
+      prisma.outfit.findFirst({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        include: {
+          items: {
+            orderBy: { position: "asc" },
+            include: { clothingItem: true },
+          },
+        },
+      }),
+    ]);
 
   const savedOutfitCards = savedOutfits.map((outfit) => ({
     id: outfit.id,
@@ -86,18 +88,6 @@ export default async function Dashboard() {
     ? "0.0"
     : Math.min(10, (5 + totalDrops * 0.15 + totalOutfits * 0.4)).toFixed(1);
 
-  // Fetch latest saved outfit
-  const latestOutfit = await prisma.outfit.findFirst({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    include: {
-      items: {
-        orderBy: { position: "asc" },
-        include: { clothingItem: true },
-      },
-    },
-  });
-
   const outfitItems =
     latestOutfit?.items.map((outfitItem) => outfitItem.clothingItem) ?? [];
 
@@ -120,46 +110,43 @@ export default async function Dashboard() {
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
         {/* Outfit of the Day Section */}
-        <div className="lg:col-span-2 relative h-[400px] rounded-nebula overflow-hidden glass group cursor-pointer">
+        <div className="lg:col-span-2 relative h-[500px] md:h-[400px] rounded-nebula overflow-hidden glass group">
           <div className="absolute inset-0 bg-gradient-to-t from-nebula-on-surface/90 via-nebula-on-surface/30 to-transparent z-10" />
 
           {latestOutfit && outfitItems.length > 0 ? (
             <>
               {/* Grid of the 3 pieces forming the outfit */}
-              <div className="absolute inset-0 grid grid-cols-3 p-4 gap-4 bg-black/10">
+              <div className="absolute inset-0 grid grid-cols-3 p-3 sm:p-4 gap-2 sm:gap-4 bg-black/10">
                 {outfitItems.map((item) => (
-                  <div key={item.id} className="relative h-full w-full rounded-nebula-inner overflow-hidden border border-white/10 shadow-lg">
+                  <div key={item.id} className="relative min-w-0 h-full w-full rounded-nebula-inner overflow-hidden border border-white/10 shadow-lg">
                     <div className={`absolute inset-0 ${getPlaceholderClass(item.category)}`} />
-                    {item.imagePath && (
-                      <Image
-                        src={item.imagePath}
-                        alt={item.name}
-                        fill
-                        sizes="250px"
-                        className="object-cover"
-                      />
-                    )}
-                    <span className="absolute top-2 left-2 px-2 py-0.5 bg-black/40 text-[9px] font-bold text-white rounded uppercase tracking-wider backdrop-blur-sm">
+                    <WardrobeImage
+                      src={item.imagePath}
+                      alt={item.name}
+                      sizes="(max-width: 640px) 30vw, 250px"
+                      className="object-cover"
+                    />
+                    <span className="absolute top-2 left-2 right-2 max-w-[calc(100%-1rem)] truncate whitespace-nowrap px-1.5 sm:px-2 py-0.5 bg-black/50 text-[8px] sm:text-[9px] font-bold text-white rounded uppercase tracking-wide backdrop-blur-sm">
                       {item.category}
                     </span>
                   </div>
                 ))}
               </div>
 
-              <div className="absolute bottom-0 left-0 p-8 z-20 space-y-3">
-                <div className="flex items-center gap-2 px-3 py-1 bg-nebula-primary/20 text-nebula-primary rounded-full w-fit backdrop-blur-md">
+              <div className="absolute bottom-0 inset-x-0 p-4 sm:p-8 z-20 space-y-3">
+                <div className="flex items-center gap-2 px-3 py-1 bg-nebula-primary/30 text-nebula-primary rounded-full w-fit backdrop-blur-sm">
                   <Sparkles size={14} />
                   <span className="text-xs font-bold uppercase tracking-widest">Active Rotation</span>
                 </div>
-                <h1 className="text-4xl font-black tracking-tighter text-white">
+                <h1 className="text-3xl sm:text-4xl leading-tight font-black tracking-tighter text-white break-words">
                   {latestOutfit.name}
                 </h1>
-                <p className="text-white/70 max-w-md text-xs font-medium">
+                <p className="text-white/85 max-w-md text-xs font-medium line-clamp-2">
                   Configured from {outfitItems.map((i) => i.name).join(", ")}.
                 </p>
                 <Link
                   href="/studio"
-                  className="inline-block px-8 py-3 bg-nebula-secondary text-nebula-bg font-bold rounded-full hover:scale-105 active:scale-95 transition-all shadow-lg shadow-nebula-secondary/20 text-sm uppercase tracking-wider"
+                  className="inline-flex min-h-11 items-center px-7 py-3 bg-nebula-secondary text-nebula-bg font-bold rounded-full md:hover:scale-105 active:scale-95 transition-all shadow-lg shadow-nebula-secondary/20 text-xs sm:text-sm uppercase tracking-wider"
                 >
                   Edit in Studio
                 </Link>
@@ -251,11 +238,10 @@ export default async function Dashboard() {
                   {item.imagePath && (
                     <div className="absolute inset-0 p-3">
                       <div className="relative w-full h-full rounded-nebula-inner overflow-hidden">
-                        <Image
+                        <WardrobeImage
                           src={item.imagePath}
                           alt={item.name}
-                          fill
-                          sizes="150px"
+                          sizes="(max-width: 640px) 45vw, 150px"
                           className="object-cover group-hover:scale-105 transition-transform"
                         />
                       </div>

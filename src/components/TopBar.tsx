@@ -36,7 +36,7 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
   const ThemeIcon = isDark ? Moon : Sun;
 
   return (
-    <header className="h-16 flex items-center justify-between gap-3 px-4 md:px-8 bg-transparent">
+    <header className="h-16 min-w-0 flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-4 md:px-8 bg-transparent">
       <button
         type="button"
         onClick={onMenuClick}
@@ -46,20 +46,20 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
         <Menu size={22} />
       </button>
 
-      <div className="flex-1 max-w-xl">
-        <form action="/closet" method="GET" className="relative group">
+      <div className="flex-1 min-w-0 max-w-xl">
+        <form action="/closet" method="GET" className="relative group min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-nebula-on-surface/30 group-focus-within:text-nebula-primary transition-colors" size={18} />
           <input
             type="search"
             name="q"
             aria-label="Search your wardrobe"
             placeholder="Search your wardrobe..."
-            className="w-full bg-nebula-surface/10 border border-black/5 rounded-full py-2 pl-10 pr-4 outline-none focus:border-nebula-primary/50 focus:bg-black/5 transition-all"
+            className="w-full min-w-0 bg-nebula-surface/10 border border-black/5 rounded-full py-2 pl-10 pr-2 sm:pr-4 outline-none focus:border-nebula-primary/50 focus:bg-black/5 transition-all"
           />
         </form>
       </div>
 
-      <div className="flex items-center gap-2 md:gap-4">
+      <div className="shrink-0 flex items-center gap-1.5 sm:gap-2 md:gap-4">
         <DailyOutfitBell />
         
         <div className="hidden sm:block h-4 w-[1px] bg-black/10 mx-2" />
